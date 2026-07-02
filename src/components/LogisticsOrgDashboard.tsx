@@ -38,7 +38,9 @@ import {
   Eye,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabaseClient'; // Ensure this path points to your configured Supabase client
+import { supabase } from '@/lib/supabaseClient';
+import { CONTRACTS } from '@/lib/config';
+import { PaymentHandlerABI } from '@/lib/abi/PaymentHandler';
 
 interface LogisticsOrgDashboardProps {
   onBack: () => void;
@@ -196,10 +198,9 @@ const LogisticsOrgDashboard = ({ onBack, onMarketplace }: LogisticsOrgDashboardP
       const signer = await provider.getSigner();
 
       // Define your contract address and ABI
-      const contractAddress = '0xdef685F9C502D055343BAC1A1d635AfDE808888b';
+      const contractAddress = CONTRACTS.PAYMENT_HANDLER;
 
-      const contractABI = [{ "type": "constructor", "inputs": [{ "name": "_appWallet", "type": "address", "internalType": "address" }], "stateMutability": "nonpayable" }, { "type": "receive", "stateMutability": "payable" }, { "type": "function", "name": "addProductWithPayment", "inputs": [{ "name": "productName", "type": "string", "internalType": "string" }, { "name": "price", "type": "uint256", "internalType": "uint256" }], "outputs": [], "stateMutability": "payable" }, { "type": "function", "name": "appWallet", "inputs": [], "outputs": [{ "name": "", "type": "address", "internalType": "address" }], "stateMutability": "view" }, { "type": "function", "name": "emergencyWithdraw", "inputs": [], "outputs": [], "stateMutability": "nonpayable" }, { "type": "function", "name": "owner", "inputs": [], "outputs": [{ "name": "", "type": "address", "internalType": "address" }], "stateMutability": "view" }, { "type": "function", "name": "receiveLogisticsPayment", "inputs": [], "outputs": [], "stateMutability": "payable" }, { "type": "function", "name": "receiveUserPayment", "inputs": [], "outputs": [], "stateMutability": "payable" }, { "type": "function", "name": "updateAppWallet", "inputs": [{ "name": "_newWallet", "type": "address", "internalType": "address" }], "outputs": [], "stateMutability": "nonpayable" }, { "type": "event", "name": "LogisticsPaymentReceived", "inputs": [{ "name": "org", "type": "address", "indexed": true, "internalType": "address" }, { "name": "amount", "type": "uint256", "indexed": false, "internalType": "uint256" }], "anonymous": false }, { "type": "event", "name": "ProductAddedWithPayment", "inputs": [{ "name": "org", "type": "address", "indexed": true, "internalType": "address" }, { "name": "productName", "type": "string", "indexed": false, "internalType": "string" }, { "name": "price", "type": "uint256", "indexed": false, "internalType": "uint256" }, { "name": "amount", "type": "uint256", "indexed": false, "internalType": "uint256" }], "anonymous": false }, { "type": "event", "name": "UserPaymentReceived", "inputs": [{ "name": "user", "type": "address", "indexed": true, "internalType": "address" }, { "name": "amount", "type": "uint256", "indexed": false, "internalType": "uint256" }], "anonymous": false }];
-      const contract = new ethers.Contract(contractAddress, contractABI, signer);
+      const contract = new ethers.Contract(contractAddress, PaymentHandlerABI, signer);
 
       // Define how much ETH to send (e.g., 0.00025 ETH ≈ $0.50 at some rate)
       const amountInEth = '0.00025'; // adjust as needed

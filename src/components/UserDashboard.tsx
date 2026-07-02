@@ -17,10 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, MapPin, Coins, Camera, MessageSquare, Play, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ethers } from 'ethers';
-import { useWallet } from '@/hooks/useWallet';//for connecting wallet
-
-///////import React, { useState } from 'react';//
-import { supabase } from '@/lib/supabaseClient'
+import { useWallet } from '@/hooks/useWallet';
+import { supabase } from '@/lib/supabaseClient';
+import { CONTRACTS, TOKEN_CONFIG } from '@/lib/config';
+import { PaymentHandlerABI } from '@/lib/abi/PaymentHandler';
+import { useTokenBalance } from '@/hooks/useTokenBalance';
 /////////
 interface UserDashboardProps {
   onBack: () => void;
@@ -29,7 +30,8 @@ interface UserDashboardProps {
 
 const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
   const { toast } = useToast();
-  const { account } = useWallet();//facilitate wallet connection
+  const { account } = useWallet();
+  const { balance: tokenBalance, isLoading: balanceLoading } = useTokenBalance(account);
   const [mySubmissions, setMySubmissions] = useState<WasteSubmission[]>([]);
   useEffect(() => {
     const fetchMySubmissions = async () => {
@@ -110,15 +112,12 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
       {
         weight: parseFloat(wasteWeight),
         description: description,
-        latitude: latitude,
-        longitude: longitude,
+        latitude: latitude.toString(),
+        longitude: longitude.toString(),
         submitted_by: account,
         waste_type: wasteType,
-        IMAGE_URL: imageUrl,
-        status: 'submitted',
-        tokens_awarded: false
-
-
+        image_url: imageUrl,
+        status: 'submitted'
       },
     ]);
 
@@ -163,9 +162,8 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
       const signer = await provider.getSigner();
 
       const contract = new ethers.Contract(
-        '0xdef685F9C502D055343BAC1A1d635AfDE808888b',
-        [{ "type": "constructor", "inputs": [{ "name": "_appWallet", "type": "address", "internalType": "address" }], "stateMutability": "nonpayable" }, { "type": "receive", "stateMutability": "payable" }, { "type": "function", "name": "addProductWithPayment", "inputs": [{ "name": "productName", "type": "string", "internalType": "string" }, { "name": "price", "type": "uint256", "internalType": "uint256" }], "outputs": [], "stateMutability": "payable" }, { "type": "function", "name": "appWallet", "inputs": [], "outputs": [{ "name": "", "type": "address", "internalType": "address" }], "stateMutability": "view" }, { "type": "function", "name": "emergencyWithdraw", "inputs": [], "outputs": [], "stateMutability": "nonpayable" }, { "type": "function", "name": "owner", "inputs": [], "outputs": [{ "name": "", "type": "address", "internalType": "address" }], "stateMutability": "view" }, { "type": "function", "name": "receiveLogisticsPayment", "inputs": [], "outputs": [], "stateMutability": "payable" }, { "type": "function", "name": "receiveUserPayment", "inputs": [], "outputs": [], "stateMutability": "payable" }, { "type": "function", "name": "updateAppWallet", "inputs": [{ "name": "_newWallet", "type": "address", "internalType": "address" }], "outputs": [], "stateMutability": "nonpayable" }, { "type": "event", "name": "LogisticsPaymentReceived", "inputs": [{ "name": "org", "type": "address", "indexed": true, "internalType": "address" }, { "name": "amount", "type": "uint256", "indexed": false, "internalType": "uint256" }], "anonymous": false }, { "type": "event", "name": "ProductAddedWithPayment", "inputs": [{ "name": "org", "type": "address", "indexed": true, "internalType": "address" }, { "name": "productName", "type": "string", "indexed": false, "internalType": "string" }, { "name": "price", "type": "uint256", "indexed": false, "internalType": "uint256" }, { "name": "amount", "type": "uint256", "indexed": false, "internalType": "uint256" }], "anonymous": false }, { "type": "event", "name": "UserPaymentReceived", "inputs": [{ "name": "user", "type": "address", "indexed": true, "internalType": "address" }, { "name": "amount", "type": "uint256", "indexed": false, "internalType": "uint256" }], "anonymous": false }],
-
+        CONTRACTS.PAYMENT_HANDLER,
+        PaymentHandlerABI,
         signer
       );
 
@@ -209,7 +207,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
             <div className="flex items-center space-x-4">
               <Badge className="bg-green-100 text-green-700 px-4 py-2">
                 <Coins className="w-4 h-4 mr-2" />
-                247.3 PPEN
+                {balanceLoading ? 'Loading...' : `${tokenBalance} PPEN`}
               </Badge>
               <Button onClick={onMarketplace} className="bg-green-600 hover:bg-green-700">
                 Marketplace

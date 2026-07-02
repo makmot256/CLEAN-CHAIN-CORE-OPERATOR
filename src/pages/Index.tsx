@@ -8,20 +8,14 @@ import WasteTrackerDashboard from "@/components/WasteTrackerDashboard";
 import LogisticsOrgDashboard from "@/components/LogisticsOrgDashboard";
 import Marketplace from "@/components/Marketplace";
 import { useWallet } from "@/hooks/useWallet";
-import { useNavigate } from "react-router-dom";
 
 import "leaflet/dist/leaflet.css";
-
-
-console.log('🔍 Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-console.log('🔐 Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY)
 
 const Index = () => {
   const [activeView, setActiveView] = useState<"home" | "dashboard" | "marketplace">("home");
   const [userType, setUserType] = useState<"user" | "tracker" | "logistics" | null>(null);
 
   const { connect, disconnect, account, active } = useWallet();
-  const navigate = useNavigate();
 
   // Redirect effect: when account becomes available and userType is set, navigate or set activeView
   useEffect(() => {
