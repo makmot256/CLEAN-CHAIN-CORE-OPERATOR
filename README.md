@@ -1,8 +1,8 @@
-# 🌍 CleanChain Operator
+# 🌍 CleanChain Core Operator
 
 <div align="center">
 
-![CleanChain Logo](https://img.shields.io/badge/CleanChain-Operator-00C853?style=for-the-badge&logo=recycle&logoColor=white)
+![CleanChain Logo](https://img.shields.io/badge/CleanChain-Core_Operator-00C853?style=for-the-badge&logo=recycle&logoColor=white)
 
 **Turn Plastic Waste Into Digital Wealth**
 
@@ -20,7 +20,7 @@
 
 ## 📖 About The Project
 
-CleanChain Operator is a revolutionary blockchain-powered ecosystem that transforms plastic waste collection into economic opportunities. Users collect plastic waste, earn **PPEN (Plastic Penny)** tokens, and can redeem them for cryptocurrency or biodegradable products.
+CleanChain Core Operator is a revolutionary blockchain-powered ecosystem that transforms plastic waste collection into economic opportunities. Users collect plastic waste, earn **PPEN (Plastic Penny)** tokens, and can redeem them for cryptocurrency or biodegradable products.
 
 ### 🎯 The Problem
 - Millions of tons of plastic waste pollute our environment daily
@@ -84,8 +84,8 @@ CleanChain Operator is a revolutionary blockchain-powered ecosystem that transfo
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/cleanchain-operator.git
-   cd cleanchain-operator
+   git clone https://github.com/makmot256/CLEAN-CHAIN-CORE-OPERATOR.git
+   cd CLEAN-CHAIN-CORE-OPERATOR
    ```
 
 2. **Install dependencies**
@@ -191,7 +191,7 @@ Deployed on **Base Sepolia Testnet**:
 ## 📁 Project Structure
 
 ```
-cleanchain-operator/
+clean-chain-core-operator/
 ├── src/
 │   ├── components/          # React components
 │   │   ├── UserDashboard.tsx
@@ -269,7 +269,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with 💚 for a cleaner planet**
 
-[![GitHub Stars](https://img.shields.io/github/stars/yourusername/cleanchain-operator?style=social)](../../stargazers)
-[![Follow](https://img.shields.io/twitter/follow/yourusername?style=social)](https://twitter.com/yourusername)
+[![GitHub Stars](https://img.shields.io/github/stars/makmot256/CLEAN-CHAIN-CORE-OPERATOR?style=social)](../../stargazers)
 
 </div>

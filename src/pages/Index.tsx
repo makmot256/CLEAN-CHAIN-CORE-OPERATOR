@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Users, Recycle, Coins, Leaf, ArrowRight, Globe, TrendingUp } from "lucide-react";
+import { MapPin, Users, Recycle, Coins, Leaf, ArrowRight, Globe, TrendingUp, Mail, Phone, Twitter, Linkedin, Send } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import UserDashboard from "@/components/UserDashboard";
 import WasteTrackerDashboard from "@/components/WasteTrackerDashboard";
 import LogisticsOrgDashboard from "@/components/LogisticsOrgDashboard";
@@ -81,7 +82,7 @@ const Index = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                CleanChain Operator
+                CleanChain Core Operator
               </h1>
               <p className="text-sm text-gray-600">Sustainable Waste Management Ecosystem</p>
             </div>
@@ -146,10 +147,10 @@ const Index = () => {
       </section>
 
       {/* Role Selection */}
-      <section className="py-16 px-4">
+      <section className="pt-4 pb-16 px-4">
         <div className="container mx-auto">
           <h3 className="text-3xl font-bold text-center mb-12 text-gray-800">
-            Choose Your Role in the CleanChain Ecosystem
+            Choose Your Role in the CleanChain Core Ecosystem
           </h3>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Users Card */}
@@ -261,8 +262,115 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 px-4">
-        {/* ... */}
+      <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+        {/* Main Footer Content */}
+        <div className="container mx-auto px-4 py-16">
+          <div className="grid md:grid-cols-3 gap-12">
+            {/* Mission Statement */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                  <Recycle className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-xl font-bold">CleanChain Core</span>
+              </div>
+              <h3 className="text-2xl font-bold leading-relaxed">
+                Let's Transform Waste &<br />
+                <span className="text-green-400">Empower Communities</span>
+              </h3>
+              <p className="text-gray-400 leading-relaxed">
+                Join the movement to create a cleaner planet while earning rewards. 
+                Every piece of plastic collected makes a difference.
+              </p>
+              <div className="flex gap-4 pt-2">
+                <a href="https://x.com/clean_chain_o" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-gray-700 hover:bg-green-600 rounded-full flex items-center justify-center transition-colors duration-300">
+                  <Twitter className="w-5 h-5" />
+                </a>
+                <a href="https://www.linkedin.com/company/129954095" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-gray-700 hover:bg-green-600 rounded-full flex items-center justify-center transition-colors duration-300">
+                  <Linkedin className="w-5 h-5" />
+                </a>
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="space-y-6">
+              <h4 className="text-xl font-bold text-green-400">Let's Get Social</h4>
+              <h5 className="text-lg font-semibold text-amber-400">Contact</h5>
+              <div className="space-y-4 text-gray-300">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
+                  <span>Makerere Innovation and Incubation Center</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Mail className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <a href="mailto:cleanchainoperator@gmail.com" className="hover:text-green-400 transition-colors">
+                    cleanchainoperator@gmail.com
+                  </a>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Phone className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <span>0740 886 639</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Newsletter Subscription */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl p-6 text-gray-800">
+                <h4 className="text-xl font-bold text-gray-900 mb-2">Subscribe to receive updates</h4>
+                <p className="text-sm text-red-500 mb-4">* indicates required</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <Input 
+                      type="email" 
+                      placeholder="your@email.com"
+                      className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">First Name</label>
+                    <Input 
+                      type="text" 
+                      placeholder="John"
+                      className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Last Name</label>
+                    <Input 
+                      type="text" 
+                      placeholder="Doe"
+                      className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                    />
+                  </div>
+                  <Button className="w-full bg-gray-700 hover:bg-green-600 text-white transition-colors duration-300">
+                    <Send className="w-4 h-4 mr-2" />
+                    Subscribe
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="border-t border-gray-700">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-gray-400 text-sm">
+                © 2026 CleanChain Core Operator. All rights reserved.
+              </p>
+              <div className="flex items-center gap-6 text-sm text-gray-400">
+                <a href="#" className="hover:text-green-400 transition-colors">Privacy Policy</a>
+                <a href="#" className="hover:text-green-400 transition-colors">Terms of Service</a>
+                <a href="#" className="hover:text-green-400 transition-colors">Cookie Policy</a>
+              </div>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );
