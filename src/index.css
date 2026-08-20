@@ -5,34 +5,40 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 152 25% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 152 25% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 152 25% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 152 68% 32%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 150 45% 96%;
+    --secondary-foreground: 152 40% 18%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 150 30% 96%;
+    --muted-foreground: 152 15% 42%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 150 55% 94%;
+    --accent-foreground: 152 60% 22%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 150 25% 89%;
+    --input: 150 25% 89%;
+    --ring: 152 68% 40%;
 
-    --radius: 0.5rem;
+    --brand-50: 150 60% 97%;
+    --brand-100: 150 55% 93%;
+    --brand-500: 152 55% 42%;
+    --brand-600: 152 68% 32%;
+    --brand-700: 153 72% 24%;
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -98,4 +104,63 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer utilities {
+  .text-gradient-brand {
+    @apply bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent;
+  }
+
+  .btn-brand {
+    @apply bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-600/20 transition-all duration-300 hover:shadow-xl hover:shadow-green-600/30 hover:-translate-y-0.5 hover:from-green-500 hover:to-emerald-500;
+  }
+
+  .btn-brand-outline {
+    @apply border-2 border-green-600/30 bg-white/60 text-green-800 backdrop-blur-sm transition-all duration-300 hover:border-green-500 hover:bg-green-50 hover:-translate-y-0.5;
+  }
+
+  .glass-panel {
+    @apply border border-green-100 bg-white/70 backdrop-blur-xl shadow-[0_8px_40px_-12px_rgba(16,120,70,0.15)];
+  }
+
+  .grid-fade-mask {
+    mask-image: radial-gradient(
+      ellipse 60% 60% at 50% 0%,
+      black 40%,
+      transparent 100%
+    );
+  }
+
+  .reveal-up {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-16px) rotate(3deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
 }

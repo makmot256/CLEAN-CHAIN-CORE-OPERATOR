@@ -177,7 +177,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-emerald-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -291,9 +291,9 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
 
           {/* Crypto Exchange Tab */}
           <TabsContent value="crypto" className="space-y-6">
-            <Card className="border-blue-200">
+            <Card className="border-teal-200">
               <CardHeader>
-                <CardTitle className="flex items-center text-blue-700">
+                <CardTitle className="flex items-center text-teal-700">
                   <CreditCard className="w-5 h-5 mr-2" />
                   Exchange PPEN for Cryptocurrency
                 </CardTitle>
