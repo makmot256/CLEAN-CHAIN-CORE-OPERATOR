@@ -420,7 +420,10 @@ const WasteTrackerDashboard = ({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div style={{ height: "500px" }} className="rounded-lg overflow-hidden border border-emerald-200">
+                  <div
+                    style={{ height: "500px" }}
+                    className="rounded-lg overflow-hidden border border-emerald-200"
+                  >
                     {/* <ErrorBoundary>
   <WasteMap />
 </ErrorBoundary> */}

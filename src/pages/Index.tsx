@@ -348,9 +348,9 @@ const Index = () => {
               data-hero-sub
               className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-600"
             >
-              Join the revolutionary blockchain-powered ecosystem where
-              plastic waste becomes PLASTIC PENNY (PPEN) tokens, creating
-              economic opportunities while cleaning our environment.
+              Join the revolutionary blockchain-powered ecosystem where plastic
+              waste becomes PLASTIC PENNY (PPEN) tokens, creating economic
+              opportunities while cleaning our environment.
             </p>
 
             <div className="mb-14 flex flex-wrap items-center justify-center gap-4">
@@ -415,8 +415,7 @@ const Index = () => {
           <ScrollReveal className="mx-auto mb-4 max-w-2xl text-center">
             <h3 className="text-3xl font-bold text-gray-900 sm:text-4xl">
               Choose Your Role in the{" "}
-              <span className="text-gradient-brand">CleanChain</span>{" "}
-              Ecosystem
+              <span className="text-gradient-brand">CleanChain</span> Ecosystem
             </h3>
             {!account && (
               <p className="mt-4 text-sm text-gray-500">
@@ -544,9 +543,7 @@ const Index = () => {
               <h4 className="text-xl font-bold text-green-400">
                 Let's Get Social
               </h4>
-              <h5 className="text-lg font-semibold text-green-300">
-                Contact
-              </h5>
+              <h5 className="text-lg font-semibold text-green-300">Contact</h5>
               <div className="space-y-4 text-gray-300">
                 <div className="flex items-start gap-3">
                   <MapPin className="mt-1 h-5 w-5 flex-shrink-0 text-green-400" />

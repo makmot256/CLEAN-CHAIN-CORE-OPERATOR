@@ -28,6 +28,8 @@ import {
   MessageSquare,
   Play,
   ArrowLeft,
+  X,
+  Plus,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ethers } from "ethers";
@@ -71,7 +73,34 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
   const [gpsCoords, setGpsCoords] = useState("");
   const [description, setDescription] = useState("");
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+
+  // Add newly selected files to the pending image list instead of replacing it
+  const handleWasteImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setImageFiles((prev) => [...prev, ...files]);
+    setImagePreviewUrls((prev) => [
+      ...prev,
+      ...files.map((file) => URL.createObjectURL(file)),
+    ]);
+    // Reset so selecting the same file again still fires onChange
+    e.target.value = "";
+  };
+
+  const handleRemoveWasteImage = (e: React.MouseEvent, index: number) => {
+    // Stop the click from bubbling to the wrapping <label> and reopening the file picker
+    e.preventDefault();
+    e.stopPropagation();
+
+    setImagePreviewUrls((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleWasteSubmission = async () => {
     if (!wasteWeight || !wasteType || !gpsCoords) {
@@ -99,44 +128,52 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
     /////
 
     const handleImageUpload = async () => {
-      if (!imageFile) return null;
-      console.log("Uploading image:", imageFile?.name);
-      const filePath = `waste_photos/${Date.now()}_${imageFile.name}`;
+      if (imageFiles.length === 0) return null;
+      const uploadedUrls: string[] = [];
 
-      let lastError: string | null = null;
+      for (const file of imageFiles) {
+        const filePath = `waste_photos/${Date.now()}_${file.name}`;
+        let uploaded = false;
+        let lastError: string | null = null;
 
-      for (const bucket of ["waste-photos", "product-images"]) {
-        const { error } = await supabase.storage
-          .from(bucket)
-          .upload(filePath, imageFile);
-
-        if (!error) {
-          const { data: publicUrlData } = supabase.storage
+        for (const bucket of ["waste-photos", "product-images"]) {
+          const { error } = await supabase.storage
             .from(bucket)
-            .getPublicUrl(filePath);
+            .upload(filePath, file);
 
-          return publicUrlData?.publicUrl || null;
+          if (!error) {
+            const { data: publicUrlData } = supabase.storage
+              .from(bucket)
+              .getPublicUrl(filePath);
+            if (publicUrlData?.publicUrl)
+              uploadedUrls.push(publicUrlData.publicUrl);
+            uploaded = true;
+            break;
+          }
+
+          lastError = error.message;
+          console.error(
+            `Image upload failed for bucket ${bucket}:`,
+            error.message,
+          );
         }
 
-        lastError = error.message;
-        console.error(
-          `Image upload failed for bucket ${bucket}:`,
-          error.message,
-        );
+        if (!uploaded) {
+          toast({
+            title: "Image upload failed",
+            description:
+              lastError ||
+              `Could not upload ${file.name}. Check bucket setup and policies.`,
+            variant: "destructive",
+          });
+        }
       }
 
-      toast({
-        title: "Image upload failed",
-        description:
-          lastError ||
-          "Storage upload failed. Check bucket setup and policies.",
-        variant: "destructive",
-      });
-      return null;
+      return uploadedUrls.length > 0 ? uploadedUrls.join(",") : null;
     };
     /////
     const imageUrl = await handleImageUpload(); // 👈 Add this line before the insert
-    if (imageFile && !imageUrl) {
+    if (imageFiles.length > 0 && !imageUrl) {
       return;
     }
     const { data, error } = await supabase.from("waste_table").insert([
@@ -172,6 +209,9 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
     setWasteType("");
     setGpsCoords("");
     setDescription("");
+    imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+    setImageFiles([]);
+    setImagePreviewUrls([]);
   };
 
   const getCurrentLocation = () => {
@@ -331,29 +371,58 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) =>
-                        setImageFile(e.target.files?.[0] || null)
-                      }
+                      multiple
+                      onChange={handleWasteImagesChange}
                       className="hidden"
                       id="waste-upload"
                     />
 
-                    <label htmlFor="waste-upload">
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors cursor-pointer">
-                        <Camera className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-                        <p className="text-sm text-gray-600">
-                          Click to upload photos
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          PNG, JPG up to 10MB
-                        </p>
+                    <label
+                      htmlFor="waste-upload"
+                      className="block cursor-pointer"
+                    >
+                      <div className="rounded-lg border-2 border-dashed border-gray-300 p-4 text-center transition-colors hover:border-green-400">
+                        {imagePreviewUrls.length > 0 ? (
+                          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                            {imagePreviewUrls.map((url, index) => (
+                              <div
+                                key={url}
+                                className="group relative aspect-square overflow-hidden rounded-md border border-green-200"
+                              >
+                                <img
+                                  src={url}
+                                  alt={`Waste photo ${index + 1}`}
+                                  className="h-full w-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={(e) =>
+                                    handleRemoveWasteImage(e, index)
+                                  }
+                                  aria-label="Remove photo"
+                                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                            <div className="flex aspect-square items-center justify-center rounded-md border border-dashed border-green-300 text-green-600">
+                              <Plus className="h-6 w-6" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="py-2">
+                            <Camera className="mx-auto mb-2 h-12 w-12 text-gray-400" />
+                            <p className="text-sm text-gray-600">
+                              Click to upload photos
+                            </p>
+                            <p className="mt-1 text-xs text-gray-500">
+                              PNG, JPG up to 10MB • multiple allowed
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </label>
-                    {imageFile && (
-                      <p className="text-sm text-green-700 mt-2">
-                        Selected image: {imageFile.name}
-                      </p>
-                    )}
                     <div>
                       <Label htmlFor="description">
                         Description (Optional)

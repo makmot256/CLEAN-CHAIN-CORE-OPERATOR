@@ -42,6 +42,8 @@ import {
   ArrowLeft,
   ShoppingCart,
   Eye,
+  X,
+  Plus,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
@@ -61,8 +63,8 @@ const LogisticsOrgDashboard = ({
   const [productPrice, setProductPrice] = useState("");
   const [productDescription, setProductDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [productImage, setProductImage] = useState<File | null>(null);
-  const [productImageURL, setProductImageURL] = useState<string | null>(null);
+  const [productImages, setProductImages] = useState<File[]>([]);
+  const [productImageURLs, setProductImageURLs] = useState<string[]>([]);
   const [listedProducts, setListedProducts] = useState<Product[]>([]);
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,37 +145,76 @@ const LogisticsOrgDashboard = ({
     fetchProducts();
   }, []);
 
-  // Replicate the image-upload logic
-  const handleImageUpload = async () => {
-    if (!productImage) return null;
-    console.log("Uploading image:", productImage.name);
-    const filePath = `product_images/${Date.now()}_${productImage.name}`;
-    let lastError: string | null = null;
+  // Add newly selected files to the pending image list instead of replacing it
+  const handleProductImagesChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    for (const bucket of ["product-images", "waste-photos"]) {
-      const { error } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, productImage);
+    setProductImages((prev) => [...prev, ...files]);
+    setProductImageURLs((prev) => [
+      ...prev,
+      ...files.map((file) => URL.createObjectURL(file)),
+    ]);
+    // Reset so selecting the same file again still fires onChange
+    e.target.value = "";
+  };
 
-      if (!error) {
-        const { data: publicUrlData } = supabase.storage
+  const handleRemoveProductImage = (e: React.MouseEvent, index: number) => {
+    // Stop the click from bubbling to the wrapping <label> and reopening the file picker
+    e.preventDefault();
+    e.stopPropagation();
+
+    setProductImageURLs((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+    setProductImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Upload every selected image, returning the public URLs that succeeded
+  const handleImagesUpload = async (): Promise<string[]> => {
+    if (productImages.length === 0) return [];
+    const uploadedUrls: string[] = [];
+
+    for (const file of productImages) {
+      const filePath = `product_images/${Date.now()}_${file.name}`;
+      let uploaded = false;
+      let lastError: string | null = null;
+
+      for (const bucket of ["product-images", "waste-photos"]) {
+        const { error } = await supabase.storage
           .from(bucket)
-          .getPublicUrl(filePath);
+          .upload(filePath, file);
 
-        return publicUrlData?.publicUrl || null;
+        if (!error) {
+          const { data: publicUrlData } = supabase.storage
+            .from(bucket)
+            .getPublicUrl(filePath);
+          if (publicUrlData?.publicUrl)
+            uploadedUrls.push(publicUrlData.publicUrl);
+          uploaded = true;
+          break;
+        }
+
+        lastError = error.message;
+        console.error(
+          `Image upload failed for bucket ${bucket}:`,
+          error.message,
+        );
       }
 
-      lastError = error.message;
-      console.error(`Image upload failed for bucket ${bucket}:`, error.message);
+      if (!uploaded) {
+        toast({
+          title: "Image upload failed",
+          description: lastError || `Could not upload ${file.name}.`,
+          variant: "destructive",
+        });
+      }
     }
 
-    toast({
-      title: "Image upload failed",
-      description:
-        lastError || "Storage upload failed. Check bucket setup and policies.",
-      variant: "destructive",
-    });
-    return null;
+    return uploadedUrls;
   };
 
   const handleAddProduct = async () => {
@@ -196,11 +237,11 @@ const LogisticsOrgDashboard = ({
 
     setIsSubmitting(true);
 
-    // Upload the image (if provided)
-    let imageUrl: string | null = null;
-    if (productImage) {
-      imageUrl = await handleImageUpload();
-      if (!imageUrl) {
+    // Upload images (if provided)
+    let imageUrls: string[] = [];
+    if (productImages.length > 0) {
+      imageUrls = await handleImagesUpload();
+      if (imageUrls.length === 0) {
         setIsSubmitting(false);
         return;
       }
@@ -213,7 +254,7 @@ const LogisticsOrgDashboard = ({
         price: priceNumber,
         category: category,
         description: productDescription,
-        image_url: imageUrl || null,
+        image_url: imageUrls.length > 0 ? imageUrls.join(",") : null,
       },
     ]);
 
@@ -228,9 +269,9 @@ const LogisticsOrgDashboard = ({
       setProductPrice("");
       setProductDescription("");
       setCategory("");
-      if (productImageURL) URL.revokeObjectURL(productImageURL);
-      setProductImage(null);
-      setProductImageURL(null);
+      productImageURLs.forEach((url) => URL.revokeObjectURL(url));
+      setProductImages([]);
+      setProductImageURLs([]);
       // Optionally re-fetch products here
     }
   };
@@ -497,46 +538,61 @@ const LogisticsOrgDashboard = ({
 
                     <div>
                       <Label>Product Images</Label>
-                      {/* Image upload area with hidden input */}
-                      <label htmlFor="image-upload" className="cursor-pointer">
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-emerald-400 transition-colors">
-                          <Package className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-                          <p className="text-sm text-gray-600">
-                            Upload product images
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            PNG, JPG up to 10MB
-                          </p>
+                      {/* Image upload area with hidden input; previews render inside the same dropzone */}
+                      <label
+                        htmlFor="image-upload"
+                        className="block cursor-pointer"
+                      >
+                        <div className="rounded-lg border-2 border-dashed border-gray-300 p-4 text-center transition-colors hover:border-emerald-400">
+                          {productImageURLs.length > 0 ? (
+                            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                              {productImageURLs.map((url, index) => (
+                                <div
+                                  key={url}
+                                  className="group relative aspect-square overflow-hidden rounded-md border border-emerald-200"
+                                >
+                                  <img
+                                    src={url}
+                                    alt={`Product preview ${index + 1}`}
+                                    className="h-full w-full object-cover"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={(e) =>
+                                      handleRemoveProductImage(e, index)
+                                    }
+                                    aria-label="Remove image"
+                                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              ))}
+                              <div className="flex aspect-square items-center justify-center rounded-md border border-dashed border-emerald-300 text-emerald-600">
+                                <Plus className="h-6 w-6" />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="py-2">
+                              <Package className="mx-auto mb-2 h-12 w-12 text-gray-400" />
+                              <p className="text-sm text-gray-600">
+                                Upload product images
+                              </p>
+                              <p className="mt-1 text-xs text-gray-500">
+                                PNG, JPG up to 10MB • multiple allowed
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </label>
                       <input
                         id="image-upload"
                         type="file"
                         accept="image/*"
+                        multiple
                         className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0] || null;
-                          setProductImage(file);
-                          if (file) {
-                            const url = URL.createObjectURL(file);
-                            if (productImageURL)
-                              URL.revokeObjectURL(productImageURL);
-                            setProductImageURL(url);
-                          } else {
-                            if (productImageURL)
-                              URL.revokeObjectURL(productImageURL);
-                            setProductImageURL(null);
-                          }
-                        }}
+                        onChange={handleProductImagesChange}
                       />
-                      {/* Preview uploaded image */}
-                      {productImageURL && (
-                        <img
-                          src={productImageURL}
-                          alt="Preview"
-                          className="mt-2 rounded-lg max-h-40 object-cover mx-auto"
-                        />
-                      )}
                     </div>
                   </div>
                 </div>
