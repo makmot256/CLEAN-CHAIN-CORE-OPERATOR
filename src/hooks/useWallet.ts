@@ -11,15 +11,15 @@ const injected = new InjectedConnector({
 export const useWallet = () => {
     const { activate, deactivate, account, active, library } = useWeb3React();
 
-    // Auto-connect if previously connected
-    /*useEffect(() => {
+    // Auto-connect if previously connected, so the session survives page reloads
+    useEffect(() => {
         const connected = localStorage.getItem("walletConnected");
         if (connected === "true") {
             activate(injected).catch(() => {
                 // ignore errors
             });
         }
-    }, [activate]);*/
+    }, [activate]);
 
     // Listen to account changes in MetaMask
     useEffect(() => {

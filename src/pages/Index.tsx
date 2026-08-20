@@ -214,6 +214,12 @@ const Index = () => {
     // useEffect will reset activeView and userType
   };
 
+  // Return to the home screen without disconnecting the wallet, so role buttons stay usable
+  const goHome = () => {
+    setUserType(null);
+    setActiveView("home");
+  };
+
   const scrollToSection = (href: string) => {
     document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
   };
@@ -222,7 +228,7 @@ const Index = () => {
   if (activeView === "dashboard" && userType === "user" && account) {
     return (
       <UserDashboard
-        onBack={handleDisconnect}
+        onBack={goHome}
         onMarketplace={() => setActiveView("marketplace")}
       />
     );
@@ -230,7 +236,7 @@ const Index = () => {
   if (activeView === "dashboard" && userType === "tracker" && account) {
     return (
       <WasteTrackerDashboard
-        onBack={handleDisconnect}
+        onBack={goHome}
         onMarketplace={() => setActiveView("marketplace")}
       />
     );
@@ -238,13 +244,13 @@ const Index = () => {
   if (activeView === "dashboard" && userType === "logistics" && account) {
     return (
       <LogisticsOrgDashboard
-        onBack={handleDisconnect}
+        onBack={goHome}
         onMarketplace={() => setActiveView("marketplace")}
       />
     );
   }
   if (activeView === "marketplace" && account) {
-    return <Marketplace onBack={handleDisconnect} />;
+    return <Marketplace onBack={goHome} />;
   }
 
   // Home view: show role selection
