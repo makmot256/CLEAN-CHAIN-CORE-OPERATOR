@@ -1,16 +1,30 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { ShoppingCart, Coins, Package, CreditCard, ArrowLeft, Search, Filter, Star } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { ethers } from 'ethers';
-import { CONTRACTS } from '@/lib/config';
-import { PlasticPennyABI } from '@/lib/abi/PlasticPenny';
-import { RedemptionABI } from '@/lib/abi/Redemption';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import {
+  ShoppingCart,
+  Coins,
+  Package,
+  CreditCard,
+  ArrowLeft,
+  Search,
+  Filter,
+  Star,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ethers } from "ethers";
+import { CONTRACTS } from "@/lib/config";
+import { PlasticPennyABI } from "@/lib/abi/PlasticPenny";
+import { RedemptionABI } from "@/lib/abi/Redemption";
 
 interface MarketplaceProps {
   onBack: () => void;
@@ -25,38 +39,41 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
       const tokenContract = new ethers.Contract(
         CONTRACTS.PLASTIC_PENNY,
         PlasticPennyABI,
-        signer
+        signer,
       );
 
       const redemptionContract = new ethers.Contract(
         CONTRACTS.REDEMPTION,
         RedemptionABI,
-        signer
+        signer,
       );
 
       const parsedAmount = ethers.parseUnits(ppenAmount, 18);
-      const approvalTx = await tokenContract.approve(redemptionContract.target, parsedAmount);
+      const approvalTx = await tokenContract.approve(
+        redemptionContract.target,
+        parsedAmount,
+      );
       await approvalTx.wait();
 
       const tx = await redemptionContract.redeem(parsedAmount);
       await tx.wait();
 
       toast({
-        title: '🎉 Redeemed!',
-        description: `You received approximately ${estimatedEth} ETH for ${ppenAmount} PPEN.`
+        title: "🎉 Redeemed!",
+        description: `You received approximately ${estimatedEth} ETH for ${ppenAmount} PPEN.`,
       });
     } catch (err) {
       toast({
-        title: '❌ Redemption Failed',
-        description: 'There was an issue processing your redemption.',
-        variant: 'destructive'
+        title: "❌ Redemption Failed",
+        description: "There was an issue processing your redemption.",
+        variant: "destructive",
       });
     }
   };
-  const [ppenAmount, setPpenAmount] = useState('');
-  const [estimatedEth, setEstimatedEth] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [ppenAmount, setPpenAmount] = useState("");
+  const [estimatedEth, setEstimatedEth] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const { toast } = useToast();
 
   const products = [
@@ -69,7 +86,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
       image: "🎋",
       rating: 4.8,
       sold: 156,
-      seller: "EcoLife Solutions"
+      seller: "EcoLife Solutions",
     },
     {
       id: 2,
@@ -80,7 +97,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
       image: "👜",
       rating: 4.9,
       sold: 203,
-      seller: "Green Living Co"
+      seller: "Green Living Co",
     },
     {
       id: 3,
@@ -91,7 +108,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
       image: "🍽️",
       rating: 4.6,
       sold: 89,
-      seller: "Sustainable Solutions"
+      seller: "Sustainable Solutions",
     },
     {
       id: 4,
@@ -102,7 +119,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
       image: "🧴",
       rating: 4.7,
       sold: 124,
-      seller: "Pure Beauty"
+      seller: "Pure Beauty",
     },
     {
       id: 5,
@@ -113,7 +130,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
       image: "🔋",
       rating: 4.5,
       sold: 67,
-      seller: "Tech Green"
+      seller: "Tech Green",
     },
     {
       id: 6,
@@ -124,8 +141,8 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
       image: "☕",
       rating: 4.9,
       sold: 298,
-      seller: "Earth Roasters"
-    }
+      seller: "Earth Roasters",
+    },
   ];
 
   const cryptoOptions = [
@@ -133,9 +150,9 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
       id: 1,
       name: "USDT",
       symbol: "USDT",
-      rate: 0.10,
+      rate: 0.1,
       description: "Convert PPEN to Tether USD",
-      icon: "💰"
+      icon: "💰",
     },
     {
       id: 2,
@@ -143,7 +160,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
       symbol: "ETH",
       rate: 0.000045,
       description: "Convert PPEN to Ethereum",
-      icon: "💎"
+      icon: "💎",
     },
     {
       id: 3,
@@ -151,8 +168,8 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
       symbol: "BTC",
       rate: 0.0000023,
       description: "Convert PPEN to Bitcoin",
-      icon: "₿"
-    }
+      icon: "₿",
+    },
   ];
 
   const handlePurchase = (productName: string, price: number) => {
@@ -169,15 +186,17 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
     });
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === "all" || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-emerald-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -187,8 +206,12 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-emerald-700">PPEN Marketplace</h1>
-                <p className="text-sm text-gray-600">Redeem tokens for eco-friendly products & crypto</p>
+                <h1 className="text-2xl font-bold text-emerald-700">
+                  PPEN Marketplace
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Redeem tokens for eco-friendly products & crypto
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -196,9 +219,11 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
                 <Coins className="w-4 h-4 mr-2" />
                 247.3 PPEN
               </Badge>
-              <Badge variant="outline" className="border-emerald-300 text-emerald-700">
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                0 items
+              <Badge
+                variant="outline"
+                className="border-emerald-300 text-emerald-700"
+              >
+                <ShoppingCart className="w-4 h-4 mr-2" />0 items
               </Badge>
             </div>
           </div>
@@ -248,36 +273,54 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
             {/* Products Grid */}
             <div className="grid md:grid-cols-3 gap-6">
               {filteredProducts.map((product) => (
-                <Card key={product.id} className="border-emerald-200 hover:shadow-xl transition-all duration-300 group">
+                <Card
+                  key={product.id}
+                  className="border-emerald-200 hover:shadow-xl transition-all duration-300 group"
+                >
                   <CardHeader className="text-center pb-2">
                     <div className="text-6xl mb-2 group-hover:scale-110 transition-transform">
                       {product.image}
                     </div>
-                    <CardTitle className="text-lg text-emerald-700">{product.name}</CardTitle>
-                    <CardDescription className="text-sm">{product.description}</CardDescription>
+                    <CardTitle className="text-lg text-emerald-700">
+                      {product.name}
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      {product.description}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="text-sm font-medium">{product.rating}</span>
-                        <span className="text-xs text-gray-500">({product.sold} sold)</span>
+                        <span className="text-sm font-medium">
+                          {product.rating}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          ({product.sold} sold)
+                        </span>
                       </div>
-                      <span className="text-xs text-gray-600">by {product.seller}</span>
+                      <span className="text-xs text-gray-600">
+                        by {product.seller}
+                      </span>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="text-2xl font-bold text-emerald-600">
                         {product.price} PPEN
                       </div>
-                      <Badge variant="outline" className="border-emerald-300 text-emerald-700">
+                      <Badge
+                        variant="outline"
+                        className="border-emerald-300 text-emerald-700"
+                      >
                         <Package className="w-3 h-3 mr-1" />
                         In Stock
                       </Badge>
                     </div>
 
                     <Button
-                      onClick={() => handlePurchase(product.name, product.price)}
+                      onClick={() =>
+                        handlePurchase(product.name, product.price)
+                      }
                       className="w-full bg-emerald-600 hover:bg-emerald-700"
                     >
                       <ShoppingCart className="w-4 h-4 mr-2" />
@@ -291,9 +334,9 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
 
           {/* Crypto Exchange Tab */}
           <TabsContent value="crypto" className="space-y-6">
-            <Card className="border-blue-200">
+            <Card className="border-teal-200">
               <CardHeader>
-                <CardTitle className="flex items-center text-blue-700">
+                <CardTitle className="flex items-center text-teal-700">
                   <CreditCard className="w-5 h-5 mr-2" />
                   Exchange PPEN for Cryptocurrency
                 </CardTitle>
@@ -304,15 +347,26 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
               <CardContent>
                 <div className="grid md:grid-cols-3 gap-6">
                   {cryptoOptions.map((crypto) => (
-                    <Card key={crypto.id} className="border-gray-200 hover:shadow-lg transition-shadow">
+                    <Card
+                      key={crypto.id}
+                      className="border-gray-200 hover:shadow-lg transition-shadow"
+                    >
                       <CardContent className="p-6 text-center">
                         <div className="text-4xl mb-3">{crypto.icon}</div>
-                        <h3 className="text-xl font-bold mb-2">{crypto.name}</h3>
-                        <p className="text-sm text-gray-600 mb-4">{crypto.description}</p>
+                        <h3 className="text-xl font-bold mb-2">
+                          {crypto.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                          {crypto.description}
+                        </p>
 
                         <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                          <div className="text-sm text-gray-600">Exchange Rate</div>
-                          <div className="text-lg font-bold">1 PPEN = {crypto.rate} {crypto.symbol}</div>
+                          <div className="text-sm text-gray-600">
+                            Exchange Rate
+                          </div>
+                          <div className="text-lg font-bold">
+                            1 PPEN = {crypto.rate} {crypto.symbol}
+                          </div>
                         </div>
 
                         <div className="space-y-3">
@@ -327,31 +381,35 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
 
                               if (value && !isNaN(Number(value))) {
                                 try {
-                                  const provider = new ethers.BrowserProvider(window.ethereum);
+                                  const provider = new ethers.BrowserProvider(
+                                    window.ethereum,
+                                  );
                                   const contract = new ethers.Contract(
                                     CONTRACTS.REDEMPTION,
                                     RedemptionABI,
-                                    provider
+                                    provider,
                                   );
-                                  const result = await contract.getEthForPPEN(ethers.parseUnits(value, 18));
+                                  const result = await contract.getEthForPPEN(
+                                    ethers.parseUnits(value, 18),
+                                  );
                                   setEstimatedEth(ethers.formatEther(result));
                                 } catch (err) {
-                                  setEstimatedEth('');
+                                  setEstimatedEth("");
                                 }
                               } else {
-                                setEstimatedEth('');
+                                setEstimatedEth("");
                               }
                             }}
                           />
                           {estimatedEth && (
                             <p className="text-sm text-gray-600">
-                              Estimated return:<span className="font-semibold">
+                              Estimated return:
+                              <span className="font-semibold">
                                 {parseFloat(estimatedEth).toFixed(6)} wei
                               </span>
-
                             </p>
                           )}
-                          {crypto.name === 'Ethereum' ? (
+                          {crypto.name === "Ethereum" ? (
                             <Button
                               onClick={handleRedeem}
                               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -360,7 +418,9 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
                             </Button>
                           ) : (
                             <Button
-                              onClick={() => handleCryptoExchange(crypto.name, 100)}
+                              onClick={() =>
+                                handleCryptoExchange(crypto.name, 100)
+                              }
                               className="w-full"
                               variant="outline"
                             >
@@ -374,7 +434,9 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
                 </div>
 
                 <div className="mt-8 bg-blue-50 rounded-lg p-6">
-                  <h4 className="font-semibold text-blue-800 mb-2">Important Notes</h4>
+                  <h4 className="font-semibold text-blue-800 mb-2">
+                    Important Notes
+                  </h4>
                   <ul className="text-sm text-blue-700 space-y-1">
                     <li>• Minimum exchange: 10 PPEN tokens</li>
                     <li>• Exchange rates update in real-time</li>
