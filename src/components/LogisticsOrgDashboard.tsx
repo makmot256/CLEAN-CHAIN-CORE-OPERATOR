@@ -44,8 +44,11 @@ import {
   Eye,
   X,
   Plus,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabaseClient";
 import { CONTRACTS } from "@/lib/config";
 import { PaymentHandlerABI } from "@/lib/abi/PaymentHandler";
@@ -67,6 +70,7 @@ const LogisticsOrgDashboard = ({
   const [productImageURLs, setProductImageURLs] = useState<string[]>([]);
   const [listedProducts, setListedProducts] = useState<Product[]>([]);
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Dummy analytics data
@@ -315,9 +319,9 @@ const LogisticsOrgDashboard = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-emerald-200 sticky top-0 z-50">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-emerald-200 dark:border-gray-800 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -325,16 +329,28 @@ const LogisticsOrgDashboard = ({
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-emerald-700">
+                <h1 className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
                   Logistics Organization Dashboard
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Waste Processing & Analytics Hub
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge className="bg-emerald-100 text-emerald-700 px-4 py-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="rounded-full"
+              >
+                {theme === "light" ? (
+                  <Moon className="h-5 w-5" />
+                ) : (
+                  <Sun className="h-5 w-5" />
+                )}
+              </Button>
+              <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-4 py-2">
                 <DollarSign className="w-4 h-4 mr-2" /> $2,340 Revenue
               </Badge>
               {/* <Button onClick={onMarketplace} className="bg-emerald-600 hover:bg-emerald-700">
@@ -347,7 +363,7 @@ const LogisticsOrgDashboard = ({
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-md">
+          <TabsList className="grid w-full grid-cols-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
             <TabsTrigger value="analytics">Analytics Dashboard</TabsTrigger>
             <TabsTrigger value="marketplace-mgmt">
               Marketplace Management

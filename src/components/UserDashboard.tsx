@@ -30,6 +30,8 @@ import {
   ArrowLeft,
   X,
   Plus,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ethers } from "ethers";
@@ -38,6 +40,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { CONTRACTS, TOKEN_CONFIG } from "@/lib/config";
 import { PaymentHandlerABI } from "@/lib/abi/PaymentHandler";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
+import { useTheme } from "@/contexts/ThemeContext";
 /////////
 interface UserDashboardProps {
   onBack: () => void;
@@ -47,6 +50,7 @@ interface UserDashboardProps {
 const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
   const { toast } = useToast();
   const { account } = useWallet();
+  const { theme, toggleTheme } = useTheme();
   const { balance: tokenBalance, isLoading: balanceLoading } =
     useTokenBalance(account);
   const [mySubmissions, setMySubmissions] = useState<WasteSubmission[]>([]);
@@ -258,11 +262,11 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
     }
   };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
-      <p className="text-sm text-gray-500 mb-2">Connected as: {account}</p>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Connected as: {account}</p>
 
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-green-200 sticky top-0 z-50">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-green-200 dark:border-gray-800 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -270,16 +274,28 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-green-700">
+                <h1 className="text-2xl font-bold text-green-700 dark:text-green-400">
                   User Dashboard
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Plastic Waste Collection Hub
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge className="bg-green-100 text-green-700 px-4 py-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="rounded-full"
+              >
+                {theme === "light" ? (
+                  <Moon className="h-5 w-5" />
+                ) : (
+                  <Sun className="h-5 w-5" />
+                )}
+              </Button>
+              <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-4 py-2">
                 <Coins className="w-4 h-4 mr-2" />
                 {balanceLoading ? "Loading..." : `${tokenBalance} PPEN`}
               </Badge>
@@ -296,7 +312,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="submit-waste" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-md">
+          <TabsList className="grid w-full grid-cols-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
             <TabsTrigger value="submit-waste">Submit Waste</TabsTrigger>
             <TabsTrigger value="my-submissions">My Submissions</TabsTrigger>
             <TabsTrigger value="education">Education</TabsTrigger>
@@ -305,13 +321,13 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
 
           {/* Submit Waste Tab */}
           <TabsContent value="submit-waste" className="space-y-6">
-            <Card className="border-green-200">
+            <Card className="border-green-200 dark:border-gray-800 dark:bg-gray-900/50">
               <CardHeader>
-                <CardTitle className="flex items-center text-green-700">
+                <CardTitle className="flex items-center text-green-700 dark:text-green-400">
                   <Upload className="w-5 h-5 mr-2" />
                   Submit Collected Waste
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-gray-400">
                   Document your plastic waste collection and earn PPEN tokens
                 </CardDescription>
               </CardHeader>
@@ -319,9 +335,9 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="waste-type">Waste Type</Label>
+                      <Label htmlFor="waste-type" className="dark:text-gray-300">Waste Type</Label>
                       <select
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded-md"
                         value={wasteType}
                         onChange={(e) => setWasteType(e.target.value)}
                       >
@@ -335,7 +351,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                     </div>
 
                     <div>
-                      <Label htmlFor="weight">Weight (kg)</Label>
+                      <Label htmlFor="weight" className="dark:text-gray-300">Weight (kg)</Label>
                       <Input
                         id="weight"
                         type="number"
@@ -346,7 +362,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                     </div>
 
                     <div>
-                      <Label htmlFor="gps">GPS Coordinates</Label>
+                      <Label htmlFor="gps" className="dark:text-gray-300">GPS Coordinates</Label>
                       <div className="flex space-x-2">
                         <Input
                           id="gps"
@@ -381,13 +397,13 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                       htmlFor="waste-upload"
                       className="block cursor-pointer"
                     >
-                      <div className="rounded-lg border-2 border-dashed border-gray-300 p-4 text-center transition-colors hover:border-green-400">
+                      <div className="rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 p-4 text-center transition-colors hover:border-green-400 dark:hover:border-green-500">
                         {imagePreviewUrls.length > 0 ? (
                           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
                             {imagePreviewUrls.map((url, index) => (
                               <div
                                 key={url}
-                                className="group relative aspect-square overflow-hidden rounded-md border border-green-200"
+                                className="group relative aspect-square overflow-hidden rounded-md border border-green-200 dark:border-gray-700"
                               >
                                 <img
                                   src={url}
@@ -406,17 +422,17 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                                 </button>
                               </div>
                             ))}
-                            <div className="flex aspect-square items-center justify-center rounded-md border border-dashed border-green-300 text-green-600">
+                            <div className="flex aspect-square items-center justify-center rounded-md border border-dashed border-green-300 dark:border-gray-700 text-green-600 dark:text-green-400">
                               <Plus className="h-6 w-6" />
                             </div>
                           </div>
                         ) : (
                           <div className="py-2">
-                            <Camera className="mx-auto mb-2 h-12 w-12 text-gray-400" />
-                            <p className="text-sm text-gray-600">
+                            <Camera className="mx-auto mb-2 h-12 w-12 text-gray-400 dark:text-gray-600" />
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
                               Click to upload photos
                             </p>
-                            <p className="mt-1 text-xs text-gray-500">
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
                               PNG, JPG up to 10MB • multiple allowed
                             </p>
                           </div>
@@ -424,12 +440,12 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                       </div>
                     </label>
                     <div>
-                      <Label htmlFor="description">
+                      <Label htmlFor="description" className="dark:text-gray-300">
                         Description (Optional)
                       </Label>
                       <textarea
                         id="description"
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded-md"
                         rows={4}
                         placeholder="Additional details about the waste location or condition..."
                         value={description}
@@ -439,15 +455,15 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                   </div>
                 </div>
 
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-green-800 mb-2">
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <h4 className="font-semibold text-green-800 dark:text-green-400 mb-2">
                     Estimated Reward
                   </h4>
-                  <p className="text-sm text-green-700">
+                  <p className="text-sm text-green-700 dark:text-green-300">
                     {wasteWeight
                       ? `${(parseFloat(wasteWeight) * 0.1).toFixed(1)} PPEN tokens`
                       : "0 PPEN tokens"}
-                    <span className="text-gray-600 ml-2">
+                    <span className="text-gray-600 dark:text-gray-400 ml-2">
                       (0.1 PPEN per kg)
                     </span>
                   </p>
@@ -468,27 +484,27 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
           <TabsContent value="my-submissions" className="space-y-6">
             <div className="grid gap-4">
               {mySubmissions.map((submission) => (
-                <Card key={submission.id} className="border-green-200">
+                <Card key={submission.id} className="border-green-200 dark:border-gray-800 dark:bg-gray-900/50">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-semibold">
+                        <h4 className="font-semibold dark:text-gray-200">
                           {submission.waste_type} Collection
                         </h4>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           Weight: {submission.weight}kg • Location:{" "}
                           {submission.description || "No description"}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                           Submitted:{" "}
                           {new Date(submission.created_at).toLocaleString()}
                         </p>
                       </div>
                       <div className="text-right">
-                        <Badge className="bg-green-100 text-green-700">
+                        <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                           +{(submission.weight * 0.1).toFixed(1)} PPEN
                         </Badge>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {submission.status === "accepted"
                             ? "Verified"
                             : "Pending"}
@@ -503,13 +519,13 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
 
           {/* Education Tab */}
           <TabsContent value="education" className="space-y-6">
-            <Card className="border-teal-200">
+            <Card className="border-teal-200 dark:border-gray-800 dark:bg-gray-900/50">
               <CardHeader>
-                <CardTitle className="flex items-center text-teal-700">
+                <CardTitle className="flex items-center text-teal-700 dark:text-teal-400">
                   <Play className="w-5 h-5 mr-2" />
                   Educational Resources
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-gray-400">
                   Learn How To Make Money From Waste
                 </CardDescription>
               </CardHeader>
@@ -539,12 +555,12 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                   ].map((course, index) => (
                     <Card
                       key={index}
-                      className="hover:shadow-md transition-shadow"
+                      className="hover:shadow-md transition-shadow dark:bg-gray-800/50 dark:border-gray-700"
                     >
                       <CardContent className="p-4">
-                        <h4 className="font-semibold mb-2">{course.title}</h4>
+                        <h4 className="font-semibold mb-2 dark:text-gray-200">{course.title}</h4>
                         <div className="flex justify-between items-center">
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
                             <span>{course.duration}</span>
                           </div>
                           <Button
@@ -565,32 +581,32 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
 
           {/* Chatbot Tab */}
           <TabsContent value="chatbot" className="space-y-6">
-            <Card className="border-emerald-200">
+            <Card className="border-emerald-200 dark:border-gray-800 dark:bg-gray-900/50">
               <CardHeader>
-                <CardTitle className="flex items-center text-emerald-700">
+                <CardTitle className="flex items-center text-emerald-700 dark:text-emerald-400">
                   <MessageSquare className="w-5 h-5 mr-2" />
                   Waste Management Assistant
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-gray-400">
                   Get help with waste collection and platform features
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-gray-50 rounded-lg p-4 h-64 mb-4 overflow-y-auto">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 h-64 mb-4 overflow-y-auto">
                   <div className="space-y-3">
-                    <div className="bg-blue-100 p-3 rounded-lg max-w-xs">
-                      <p className="text-sm">
+                    <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg max-w-xs">
+                      <p className="text-sm dark:text-gray-200">
                         Hello! I'm your waste management assistant. How can I
                         help you today?
                       </p>
                     </div>
-                    <div className="bg-white p-3 rounded-lg max-w-xs ml-auto">
-                      <p className="text-sm">
+                    <div className="bg-white dark:bg-gray-700 p-3 rounded-lg max-w-xs ml-auto">
+                      <p className="text-sm dark:text-gray-200">
                         How do I properly sort plastic waste?
                       </p>
                     </div>
-                    <div className="bg-blue-100 p-3 rounded-lg max-w-xs">
-                      <p className="text-sm">
+                    <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg max-w-xs">
+                      <p className="text-sm dark:text-gray-200">
                         Great question! Here are the main plastic categories to
                         sort by...
                       </p>

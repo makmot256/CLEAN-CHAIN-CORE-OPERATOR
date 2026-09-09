@@ -25,6 +25,8 @@ import {
   Sparkles,
   ChevronDown,
   Shield,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
@@ -37,6 +39,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { useWallet } from "@/hooks/useWallet";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/contexts/ThemeContext";
 import { upsertConnectedUser } from "@/lib/users";
 import gsap from "gsap";
 
@@ -124,6 +127,7 @@ const Index = () => {
 
   const { connect, disconnect, account } = useWallet();
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
   const heroRef = useRef<HTMLDivElement>(null);
 
   // Redirect effect: when account becomes available and userType is set, navigate or set activeView
@@ -264,20 +268,20 @@ const Index = () => {
 
   // Home view: show role selection
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
       {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-green-100 bg-white/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-green-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <a href="#home" className="flex items-center space-x-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-600 to-emerald-600 shadow-lg shadow-green-600/20">
               <Recycle className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-tight text-gray-900 sm:text-xl">
+              <h1 className="text-lg font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl">
                 CleanChain{" "}
                 <span className="text-gradient-brand">Core Operator</span>
               </h1>
-              <p className="hidden text-xs text-gray-500 sm:block">
+              <p className="hidden text-xs text-gray-500 dark:text-gray-400 sm:block">
                 Sustainable Waste Management Ecosystem
               </p>
             </div>
@@ -288,14 +292,14 @@ const Index = () => {
               <button
                 key={link.href}
                 onClick={() => scrollToSection(link.href)}
-                className="text-sm font-medium text-gray-600 transition-colors hover:text-green-700"
+                className="text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors hover:text-green-700 dark:hover:text-green-400"
               >
                 {link.label}
               </button>
             ))}
             <Link
               to="/admin"
-              className="inline-flex items-center gap-1 text-sm font-medium text-gray-600 transition-colors hover:text-green-700"
+              className="inline-flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors hover:text-green-700 dark:hover:text-green-400"
             >
               <Shield className="h-3.5 w-3.5" />
               Admin
@@ -303,9 +307,21 @@ const Index = () => {
           </nav>
 
           <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="rounded-full"
+            >
+              {theme === "light" ? (
+                <Moon className="h-5 w-5" />
+              ) : (
+                <Sun className="h-5 w-5" />
+              )}
+            </Button>
             <Link
               to="/admin"
-              className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-green-50 hover:text-green-700 md:hidden"
+              className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 dark:text-gray-400 hover:bg-green-50 dark:hover:bg-gray-800 hover:text-green-700 dark:hover:text-green-400 md:hidden"
               aria-label="Admin hub"
             >
               <Shield className="h-5 w-5" />
@@ -314,7 +330,7 @@ const Index = () => {
               <>
                 <Badge
                   variant="outline"
-                  className="hidden border-green-300 px-3 py-1 text-xs text-green-800 sm:inline-flex"
+                  className="hidden border-green-300 dark:border-green-700 px-3 py-1 text-xs text-green-800 dark:text-green-400 sm:inline-flex"
                 >
                   {account.slice(0, 6)}...{account.slice(-4)}
                 </Badge>
@@ -328,7 +344,7 @@ const Index = () => {
               </>
             ) : (
               <>
-                <Badge className="hidden bg-green-100 text-green-700 sm:inline-flex">
+                <Badge className="hidden bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 sm:inline-flex">
                   <Coins className="mr-1 h-3 w-3" />
                   PPEN Token
                 </Badge>
@@ -350,7 +366,7 @@ const Index = () => {
       <section
         id="home"
         ref={heroRef}
-        className="relative isolate overflow-hidden bg-gradient-to-b from-green-50/70 via-white to-white py-24 px-4 sm:py-28"
+        className="relative isolate overflow-hidden bg-gradient-to-b from-green-50/70 dark:from-gray-900 via-white dark:via-gray-950 to-white dark:to-gray-950 py-24 px-4 sm:py-28"
       >
         <HeroCanvas />
         <div className="pointer-events-none absolute inset-0 grid-fade-mask bg-[linear-gradient(to_right,rgba(22,163,74,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(22,163,74,0.06)_1px,transparent_1px)] bg-[size:56px_56px]" />
@@ -359,7 +375,7 @@ const Index = () => {
           <div className="mx-auto max-w-4xl">
             <div
               data-hero-badge
-              className="mb-6 inline-flex items-center gap-2 rounded-full border border-green-200 bg-white/80 px-4 py-1.5 text-sm font-medium text-green-700 shadow-sm backdrop-blur"
+              className="mb-6 inline-flex items-center gap-2 rounded-full border border-green-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 px-4 py-1.5 text-sm font-medium text-green-700 dark:text-green-400 shadow-sm backdrop-blur"
             >
               <Sparkles className="h-4 w-4" />
               Blockchain-powered circular economy
@@ -367,7 +383,7 @@ const Index = () => {
 
             <h2
               data-hero-title
-              className="mb-6 text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl"
+              className="mb-6 text-4xl font-bold leading-tight dark:text-gray-100 sm:text-5xl lg:text-6xl"
             >
               Turn Plastic Waste Into{" "}
               <span className="text-gradient-brand">Digital Wealth</span>
@@ -375,7 +391,7 @@ const Index = () => {
 
             <p
               data-hero-sub
-              className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-600"
+              className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-600 dark:text-gray-300"
             >
               Join the revolutionary blockchain-powered ecosystem where plastic
               waste becomes PLASTIC PENNY (PPEN) tokens, creating economic
@@ -406,21 +422,21 @@ const Index = () => {
             <div className="flex flex-wrap justify-center gap-3">
               <Badge
                 data-hero-trust
-                className="bg-green-100 px-4 py-2 text-sm text-green-700"
+                className="bg-green-100 dark:bg-green-900/30 px-4 py-2 text-sm text-green-700 dark:text-green-400"
               >
                 <Globe className="mr-2 h-4 w-4" />
                 Blockchain Verified
               </Badge>
               <Badge
                 data-hero-trust
-                className="bg-emerald-100 px-4 py-2 text-sm text-emerald-700"
+                className="bg-emerald-100 dark:bg-emerald-900/30 px-4 py-2 text-sm text-emerald-700 dark:text-emerald-400"
               >
                 <TrendingUp className="mr-2 h-4 w-4" />
                 Economic Impact
               </Badge>
               <Badge
                 data-hero-trust
-                className="bg-teal-100 px-4 py-2 text-sm text-teal-700"
+                className="bg-teal-100 dark:bg-teal-900/30 px-4 py-2 text-sm text-teal-700 dark:text-teal-400"
               >
                 <Leaf className="mr-2 h-4 w-4" />
                 Environmental Solution
@@ -431,7 +447,7 @@ const Index = () => {
           <button
             onClick={() => scrollToSection("#roles")}
             aria-label="Scroll to role selection"
-            className="mx-auto mt-16 flex h-10 w-10 animate-float-slow items-center justify-center rounded-full border border-green-200 bg-white/70 text-green-600 shadow-sm backdrop-blur transition hover:bg-green-50"
+            className="mx-auto mt-16 flex h-10 w-10 animate-float-slow items-center justify-center rounded-full border border-green-200 dark:border-gray-700 bg-white/70 dark:bg-gray-800/70 text-green-600 dark:text-green-400 shadow-sm backdrop-blur transition hover:bg-green-50 dark:hover:bg-gray-700"
           >
             <ChevronDown className="h-5 w-5" />
           </button>
@@ -439,15 +455,15 @@ const Index = () => {
       </section>
 
       {/* Role Selection */}
-      <section id="roles" className="px-4 pb-24 pt-16">
+      <section id="roles" className="px-4 pb-24 pt-16 dark:bg-gray-950">
         <div className="container mx-auto">
           <ScrollReveal className="mx-auto mb-4 max-w-2xl text-center">
-            <h3 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+            <h3 className="text-3xl font-bold text-gray-900 dark:text-gray-100 sm:text-4xl">
               Choose Your Role in the{" "}
               <span className="text-gradient-brand">CleanChain</span> Ecosystem
             </h3>
             {!account && (
-              <p className="mt-4 text-sm text-gray-500">
+              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
                 Connect your MetaMask wallet from the top-right to unlock all
                 categories.
               </p>
@@ -463,7 +479,7 @@ const Index = () => {
               return (
                 <Card
                   key={role.id}
-                  className={`group cursor-pointer border ${role.borderIdle} ${role.borderHover} transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-green-900/10`}
+                  className={`group cursor-pointer border ${role.borderIdle} dark:border-gray-800 dark:bg-gray-900/50 ${role.borderHover} transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-green-900/10`}
                 >
                   <CardHeader className="pb-4 text-center">
                     <div
@@ -471,13 +487,13 @@ const Index = () => {
                     >
                       <Icon className="h-8 w-8 text-white" />
                     </div>
-                    <CardTitle className={`text-2xl ${role.titleColor}`}>
+                    <CardTitle className={`text-2xl ${role.titleColor} dark:text-green-400`}>
                       {role.title}
                     </CardTitle>
-                    <CardDescription>{role.subtitle}</CardDescription>
+                    <CardDescription className="dark:text-gray-400">{role.subtitle}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <ul className="space-y-2 text-sm text-gray-600">
+                    <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                       {role.bullets.map((bullet) => (
                         <li key={bullet}>• {bullet}</li>
                       ))}
@@ -501,7 +517,7 @@ const Index = () => {
       {/* Stats Section */}
       <section
         id="stats"
-        className="border-y border-green-100 bg-gradient-to-b from-green-50/60 to-white px-4 py-16"
+        className="border-y border-green-100 dark:border-gray-800 bg-gradient-to-b from-green-50/60 dark:from-gray-900 to-white dark:to-gray-950 px-4 py-16"
       >
         <div className="container mx-auto">
           <ScrollReveal
@@ -509,14 +525,14 @@ const Index = () => {
             className="grid gap-8 text-center md:grid-cols-4"
           >
             {STATS.map((stat) => (
-              <div key={stat.label} className="glass-panel rounded-2xl p-6">
+              <div key={stat.label} className="glass-panel dark:bg-gray-900/50 dark:border-gray-800 rounded-2xl p-6">
                 <AnimatedCounter
                   value={stat.value}
                   prefix={stat.prefix}
                   suffix={stat.suffix}
                   className="text-gradient-brand text-3xl font-bold"
                 />
-                <div className="mt-2 text-gray-600">{stat.label}</div>
+                <div className="mt-2 text-gray-600 dark:text-gray-300">{stat.label}</div>
               </div>
             ))}
           </ScrollReveal>

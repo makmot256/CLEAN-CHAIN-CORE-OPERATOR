@@ -46,8 +46,11 @@ import {
   Coins,
   ArrowLeft,
   Users,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/contexts/ThemeContext";
 
 import WasteMap from "./WasteMap";
 import { supabase } from "@/lib/supabaseClient";
@@ -68,6 +71,7 @@ const WasteTrackerDashboard = ({
   const [submissions, setSubmissions] = useState<WasteSubmission[]>([]);
   const mapRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
   const { account } = useWallet();
   const { balance: tokenBalance, isLoading: balanceLoading } =
     useTokenBalance(account);
@@ -288,9 +292,9 @@ const WasteTrackerDashboard = ({
  }, []); */
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-emerald-200 sticky top-0 z-50">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-emerald-200 dark:border-gray-800 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -298,16 +302,28 @@ const WasteTrackerDashboard = ({
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-emerald-700">
+                <h1 className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
                   Waste Tracker Dashboard
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Collection & Verification Hub
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge className="bg-emerald-100 text-emerald-700 px-4 py-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="rounded-full"
+              >
+                {theme === "light" ? (
+                  <Moon className="h-5 w-5" />
+                ) : (
+                  <Sun className="h-5 w-5" />
+                )}
+              </Button>
+              <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-4 py-2">
                 <Coins className="w-4 h-4 mr-2" />
                 {balanceLoading ? "Loading..." : `${tokenBalance} PPEN`}
               </Badge>
@@ -321,7 +337,7 @@ const WasteTrackerDashboard = ({
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="map-view" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-md">
+          <TabsList className="grid w-full grid-cols-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
             <TabsTrigger value="map-view">GPS Map View</TabsTrigger>
             <TabsTrigger value="available-jobs">Available Jobs</TabsTrigger>
             <TabsTrigger value="completed-jobs">Completed Jobs</TabsTrigger>

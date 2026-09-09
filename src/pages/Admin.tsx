@@ -8,14 +8,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Recycle, Shield } from "lucide-react";
+import { Recycle, Shield, Moon, Sun } from "lucide-react";
 import { useWallet } from "@/hooks/useWallet";
+import { useTheme } from "@/contexts/ThemeContext";
 import { checkIsAdmin } from "@/lib/admin";
 import { upsertConnectedUser } from "@/lib/users";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 
 const Admin = () => {
   const { connect, disconnect, account } = useWallet();
+  const { theme, toggleTheme } = useTheme();
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [connecting, setConnecting] = useState(false);
 
@@ -52,13 +54,27 @@ const Admin = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-green-950 to-slate-900 px-4">
-      <Card className="w-full max-w-md border-green-800/40 bg-white/95">
+      <div className="absolute top-4 right-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          className="rounded-full text-white hover:bg-white/10"
+        >
+          {theme === "light" ? (
+            <Moon className="h-5 w-5" />
+          ) : (
+            <Sun className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
+      <Card className="w-full max-w-md border-green-800/40 bg-white/95 dark:bg-gray-900/95 dark:border-gray-800">
         <CardHeader className="text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-green-700 to-emerald-600 text-white">
             <Shield className="h-6 w-6" />
           </div>
-          <CardTitle>Admin Hub</CardTitle>
-          <CardDescription>
+          <CardTitle className="dark:text-gray-100">Admin Hub</CardTitle>
+          <CardDescription className="dark:text-gray-400">
             Connect an authorized wallet to review submissions, grant PPEN, and
             manage users.
           </CardDescription>
@@ -75,11 +91,11 @@ const Admin = () => {
           )}
 
           {account && allowed === null && (
-            <p className="text-center text-sm text-gray-500">Checking access…</p>
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400">Checking access…</p>
           )}
 
           {account && allowed === false && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-800 dark:text-red-400">
               <p className="mb-2 font-medium">This wallet is not an admin.</p>
               <p className="break-all font-mono text-xs">{account}</p>
               <p className="mt-2">
