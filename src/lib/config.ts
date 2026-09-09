@@ -27,3 +27,9 @@ export const TOKEN_CONFIG = {
   // Reward rate: tokens per kg of waste collected
   REWARD_RATE_PER_KG: 0.1,
 } as const;
+
+// Comma-separated admin wallets can also be set via VITE_ADMIN_WALLETS in .env
+export const ADMIN_WALLETS: string[] = [];
+
+// Nearby submissions within this radius are flagged as possible duplicates
+export const DUPLICATE_RADIUS_METERS = 75;

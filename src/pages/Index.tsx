@@ -24,8 +24,10 @@ import {
   Send,
   Sparkles,
   ChevronDown,
+  Shield,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom";
 import UserDashboard from "@/components/UserDashboard";
 import WasteTrackerDashboard from "@/components/WasteTrackerDashboard";
 import LogisticsOrgDashboard from "@/components/LogisticsOrgDashboard";
@@ -35,6 +37,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { useWallet } from "@/hooks/useWallet";
 import { useToast } from "@/hooks/use-toast";
+import { upsertConnectedUser } from "@/lib/users";
 import gsap from "gsap";
 
 import "leaflet/dist/leaflet.css";
@@ -135,6 +138,11 @@ const Index = () => {
     }
   }, [account, userType]);
 
+  useEffect(() => {
+    if (!account) return;
+    upsertConnectedUser(account).catch(() => undefined);
+  }, [account]);
+
   // Hero entrance animation
   useEffect(() => {
     if (activeView !== "home" || !heroRef.current) return;
@@ -207,6 +215,7 @@ const Index = () => {
 
     setUserType(role);
     setActiveView("dashboard");
+    upsertConnectedUser(account, role).catch(() => undefined);
   };
 
   const handleDisconnect = () => {
@@ -284,9 +293,23 @@ const Index = () => {
                 {link.label}
               </button>
             ))}
+            <Link
+              to="/admin"
+              className="inline-flex items-center gap-1 text-sm font-medium text-gray-600 transition-colors hover:text-green-700"
+            >
+              <Shield className="h-3.5 w-3.5" />
+              Admin
+            </Link>
           </nav>
 
           <div className="flex items-center space-x-2">
+            <Link
+              to="/admin"
+              className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-green-50 hover:text-green-700 md:hidden"
+              aria-label="Admin hub"
+            >
+              <Shield className="h-5 w-5" />
+            </Link>
             {account ? (
               <>
                 <Badge
@@ -638,6 +661,9 @@ const Index = () => {
                 <a href="#" className="transition-colors hover:text-green-400">
                   Cookie Policy
                 </a>
+                <Link to="/admin" className="transition-colors hover:text-green-400">
+                  Admin Hub
+                </Link>
               </div>
             </div>
           </div>

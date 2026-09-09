@@ -202,7 +202,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
     const ppTokens = parseFloat(wasteWeight) * 0.1;
     toast({
       title: "Waste Submitted!",
-      description: `You are to earn ${ppTokens.toFixed(1)} PPEN tokens. A waste tracker will be notified.`,
+      description: `Pending admin verification. If approved you will earn ${ppTokens.toFixed(1)} PPEN.`,
     });
 
     setWasteWeight("");

@@ -48,12 +48,9 @@ import {
   Users,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ethers, BrowserProvider, parseUnits } from "ethers";
 
 import WasteMap from "./WasteMap";
 import { supabase } from "@/lib/supabaseClient";
-import { CONTRACTS, TOKEN_CONFIG } from "@/lib/config";
-import { PlasticPennyABI } from "@/lib/abi/PlasticPenny";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useWallet } from "@/hooks/useWallet";
 
@@ -173,113 +170,38 @@ const WasteTrackerDashboard = ({
   /////start
   // …inside WasteTrackerDashboard component
   const handleAcceptJob = async (job: WasteSubmission) => {
-    // 1️⃣ Mark job accepted in Supabase
     const { error: acceptErr } = await supabase
       .from("waste_table")
       .update({ status: "accepted" })
       .eq("id", job.id);
     if (acceptErr) {
       console.error("Error accepting job:", acceptErr);
+      toast({
+        title: "Could not accept job",
+        description: acceptErr.message,
+        variant: "destructive",
+      });
       return;
     }
 
-    // 2️⃣ Calculate tokens
-    const tokensToAward = job.weight * TOKEN_CONFIG.REWARD_RATE_PER_KG;
+    toast({
+      title: "Job accepted",
+      description:
+        "Pickup recorded. PPEN is granted after an admin verifies the report is unique and at a prominent disposal site.",
+    });
 
-    // 3️⃣ Trigger on-chain transfer from user's wallet
-    try {
-      if (!window.ethereum) {
-        alert("Please connect a wallet like MetaMask");
-        return;
-      }
+    const newCompleted: CompletedJob = {
+      id: job.id,
+      type: job.waste_type,
+      weight: job.weight,
+      location: job.description ?? "Unknown",
+      user: job.submitted_by,
+      reward: "Pending admin",
+      completedAt: "just now",
+    };
 
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-
-      const provider = new BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(
-        CONTRACTS.PLASTIC_PENNY,
-        PlasticPennyABI,
-        signer,
-      );
-
-      const amount = parseUnits(tokensToAward.toString(), 18);
-      const tx = await contract.transfer(job.submitted_by, amount);
-      await tx.wait();
-      const txHash = tx.hash;
-
-      // 4️⃣ Update off-chain user_wallet balance
-      const { data: wallet, error: fetchBalErr } = await supabase
-        .from("user_wallet")
-        .select("token_balance")
-        .eq("account", job.submitted_by)
-        .maybeSingle();
-      if (fetchBalErr) {
-        console.error("Failed to fetch balance:", fetchBalErr);
-        toast({
-          title: "Database setup required",
-          description:
-            fetchBalErr.code === "PGRST205"
-              ? "Missing table: user_wallet. Create it in Supabase SQL Editor."
-              : "Could not read wallet balance from Supabase.",
-        });
-        return;
-      }
-
-      const currentBalance = wallet?.token_balance ?? 0;
-      const newBalance = currentBalance + tokensToAward;
-
-      const { error: updateBalErr } = wallet
-        ? await supabase
-            .from("user_wallet")
-            .update({ token_balance: newBalance })
-            .eq("account", job.submitted_by)
-        : await supabase.from("user_wallet").insert({
-            account: job.submitted_by,
-            token_balance: tokensToAward,
-          });
-      if (updateBalErr) {
-        console.error("Failed to update balance:", updateBalErr);
-        toast({
-          title: "Wallet update failed",
-          description: updateBalErr.message,
-        });
-        return;
-      }
-
-      // 5️⃣ Mark tokens_awarded
-      await supabase
-        .from("waste_table")
-        .update({ tokens_awarded: true })
-        .eq("id", job.id);
-
-      // 6️⃣ Toast
-      toast({
-        title: "Job Accepted!",
-        description: `Sent ${tokensToAward.toFixed(1)} PPEN (tx ${txHash})`,
-      });
-      const newCompleted: CompletedJob = {
-        id: job.id,
-        type: job.waste_type,
-        weight: job.weight,
-        location: job.description ?? "Unknown",
-        user: job.submitted_by,
-        reward: `${tokensToAward.toFixed(1)} PPEN`,
-        completedAt: "just now",
-      };
-
-      setCompletedJobs((prev) => [...prev, newCompleted]);
-
-      // Optionally remove from submissions (so it disappears from Available Jobs)
-      setSubmissions((prev) => prev.filter((j) => j.id !== job.id));
-    } catch (err) {
-      console.error("On-chain transfer failed:", err);
-      toast({
-        title: "Transfer failed",
-        description:
-          "Could not complete token transfer. Check wallet and try again.",
-      });
-    }
+    setCompletedJobs((prev) => [...prev, newCompleted]);
+    setSubmissions((prev) => prev.filter((j) => j.id !== job.id));
   };
 
   const handleCompleteJob = (jobId: number) => {

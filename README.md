@@ -154,6 +154,8 @@ CleanChain Core Operator is a revolutionary blockchain-powered ecosystem that tr
    CREATE POLICY "Enable all access" ON products FOR ALL USING (true) WITH CHECK (true);
    ```
 
+   Then also run `supabase/admin-setup.sql` to add the admin hub tables (`app_users`, `user_wallet`) and verification columns.
+
 5. **Start the development server**
    ```bash
    npm run dev
@@ -194,6 +196,7 @@ Deployed on **Base Sepolia Testnet**:
 clean-chain-core-operator/
 ├── src/
 │   ├── components/          # React components
+│   │   ├── admin/           # Admin hub (analytics, verification, users)
 │   │   ├── UserDashboard.tsx
 │   │   ├── WasteTrackerDashboard.tsx
 │   │   ├── LogisticsOrgDashboard.tsx
@@ -205,11 +208,15 @@ clean-chain-core-operator/
 │   │   └── useTokenBalance.ts
 │   ├── lib/                 # Utilities and config
 │   │   ├── config.ts        # Contract addresses
+│   │   ├── admin.ts         # Verification + token grant helpers
 │   │   ├── supabaseClient.ts
 │   │   └── abi/             # Smart contract ABIs
 │   ├── pages/
-│   │   └── Index.tsx        # Main landing page
+│   │   ├── Index.tsx        # Main landing page
+│   │   └── Admin.tsx        # Admin gate + hub
 │   └── types/               # TypeScript definitions
+├── supabase/
+│   └── admin-setup.sql      # Users + verification columns
 ├── public/                  # Static assets
 └── .env.example            # Environment template
 ```
@@ -232,9 +239,23 @@ clean-chain-core-operator/
 5. Click "Submit Waste"
 
 ### Earn & Redeem Tokens
-- Earn 0.1 PPEN per kg of waste submitted
+- Earn 0.1 PPEN per kg of waste **after admin verification**
 - Visit Marketplace to redeem for products
 - Or exchange PPEN for ETH
+
+### Admin Hub
+1. Run `supabase/admin-setup.sql` in the Supabase SQL Editor
+2. Add your wallet to `.env`:
+   ```env
+   VITE_ADMIN_WALLETS=0xYourAdminWalletHere
+   ```
+3. Restart the app, then open [Admin Hub](/admin) (`/admin`)
+4. Review each submission:
+   - Grant tokens only if it is **not a duplicate** and is at a **prominent waste-disposal location**
+   - Otherwise reject with no tokens
+5. Manage users (create, edit, suspend, delete) and inspect connected wallets
+
+The admin wallet that approves a report must be the PPEN contract owner (to mint) or hold enough PPEN (to transfer).
 
 ---
 
