@@ -19,18 +19,23 @@ import {
   Search,
   Filter,
   Star,
+  Home,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ethers } from "ethers";
 import { CONTRACTS } from "@/lib/config";
 import { PlasticPennyABI } from "@/lib/abi/PlasticPenny";
 import { RedemptionABI } from "@/lib/abi/Redemption";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface MarketplaceProps {
   onBack: () => void;
 }
 
 const Marketplace = ({ onBack }: MarketplaceProps) => {
+  const { theme, toggleTheme } = useTheme();
   const handleRedeem = async () => {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -196,32 +201,44 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-emerald-200 sticky top-0 z-50">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-emerald-200 dark:border-gray-800 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={onBack} className="p-2">
+              <Button variant="ghost" onClick={onBack} className="p-2" title="Back">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-emerald-700">
+                <h1 className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
                   PPEN Marketplace
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Redeem tokens for eco-friendly products & crypto
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge className="bg-emerald-100 text-emerald-700 px-4 py-2 text-lg">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="rounded-full"
+              >
+                {theme === "light" ? (
+                  <Moon className="h-5 w-5" />
+                ) : (
+                  <Sun className="h-5 w-5" />
+                )}
+              </Button>
+              <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-4 py-2 text-lg">
                 <Coins className="w-4 h-4 mr-2" />
                 247.3 PPEN
               </Badge>
               <Badge
                 variant="outline"
-                className="border-emerald-300 text-emerald-700"
+                className="border-emerald-300 dark:border-gray-700 text-emerald-700 dark:text-emerald-400"
               >
                 <ShoppingCart className="w-4 h-4 mr-2" />0 items
               </Badge>
@@ -232,7 +249,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-white/80 backdrop-blur-md">
+          <TabsList className="grid w-full grid-cols-2 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
             <TabsTrigger value="products">Biodegradable Products</TabsTrigger>
             <TabsTrigger value="crypto">Crypto Exchange</TabsTrigger>
           </TabsList>
@@ -240,7 +257,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-6">
             {/* Search and Filters */}
-            <Card className="border-emerald-200">
+            <Card className="border-emerald-200 dark:border-gray-800 dark:bg-gray-900/50">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1 relative">
@@ -257,7 +274,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
                     <select
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-md"
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded-md"
                     >
                       <option value="all">All Categories</option>
                       <option value="personal-care">Personal Care</option>
@@ -275,16 +292,16 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
               {filteredProducts.map((product) => (
                 <Card
                   key={product.id}
-                  className="border-emerald-200 hover:shadow-xl transition-all duration-300 group"
+                  className="border-emerald-200 dark:border-gray-800 dark:bg-gray-900/50 hover:shadow-xl transition-all duration-300 group"
                 >
                   <CardHeader className="text-center pb-2">
                     <div className="text-6xl mb-2 group-hover:scale-110 transition-transform">
                       {product.image}
                     </div>
-                    <CardTitle className="text-lg text-emerald-700">
+                    <CardTitle className="text-lg text-emerald-700 dark:text-emerald-400">
                       {product.name}
                     </CardTitle>
-                    <CardDescription className="text-sm">
+                    <CardDescription className="text-sm dark:text-gray-400">
                       {product.description}
                     </CardDescription>
                   </CardHeader>
@@ -292,14 +309,14 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-medium dark:text-gray-200">
                           {product.rating}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           ({product.sold} sold)
                         </span>
                       </div>
-                      <span className="text-xs text-gray-600">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
                         by {product.seller}
                       </span>
                     </div>
@@ -334,13 +351,13 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
 
           {/* Crypto Exchange Tab */}
           <TabsContent value="crypto" className="space-y-6">
-            <Card className="border-teal-200">
+            <Card className="border-teal-200 dark:border-gray-800 dark:bg-gray-900/50">
               <CardHeader>
-                <CardTitle className="flex items-center text-teal-700">
+                <CardTitle className="flex items-center text-teal-700 dark:text-teal-400">
                   <CreditCard className="w-5 h-5 mr-2" />
                   Exchange PPEN for Cryptocurrency
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-gray-400">
                   Convert your earned PPEN tokens to popular cryptocurrencies
                 </CardDescription>
               </CardHeader>
@@ -349,22 +366,22 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
                   {cryptoOptions.map((crypto) => (
                     <Card
                       key={crypto.id}
-                      className="border-gray-200 hover:shadow-lg transition-shadow"
+                      className="border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 hover:shadow-lg transition-shadow"
                     >
                       <CardContent className="p-6 text-center">
                         <div className="text-4xl mb-3">{crypto.icon}</div>
-                        <h3 className="text-xl font-bold mb-2">
+                        <h3 className="text-xl font-bold mb-2 dark:text-gray-200">
                           {crypto.name}
                         </h3>
-                        <p className="text-sm text-gray-600 mb-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                           {crypto.description}
                         </p>
 
-                        <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                          <div className="text-sm text-gray-600">
+                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 mb-4">
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
                             Exchange Rate
                           </div>
-                          <div className="text-lg font-bold">
+                          <div className="text-lg font-bold dark:text-gray-200">
                             1 PPEN = {crypto.rate} {crypto.symbol}
                           </div>
                         </div>
@@ -402,7 +419,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
                             }}
                           />
                           {estimatedEth && (
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
                               Estimated return:
                               <span className="font-semibold">
                                 {parseFloat(estimatedEth).toFixed(6)} wei
@@ -433,11 +450,11 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
                   ))}
                 </div>
 
-                <div className="mt-8 bg-blue-50 rounded-lg p-6">
-                  <h4 className="font-semibold text-blue-800 mb-2">
+                <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                  <h4 className="font-semibold text-blue-800 dark:text-blue-400 mb-2">
                     Important Notes
                   </h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
+                  <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
                     <li>• Minimum exchange: 10 PPEN tokens</li>
                     <li>• Exchange rates update in real-time</li>
                     <li>• Transactions are processed on blockchain</li>
