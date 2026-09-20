@@ -79,6 +79,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Add newly selected files to the pending image list instead of replacing it
   const handleWasteImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,6 +108,8 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
   };
 
   const handleWasteSubmission = async () => {
+    if (isSubmitting) return;
+    
     if (!wasteWeight || !wasteType || !gpsCoords) {
       toast({
         title: "Missing Information",
@@ -129,93 +132,119 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
       return;
     }
 
-    /////
+    setIsSubmitting(true);
 
-    const handleImageUpload = async () => {
-      if (imageFiles.length === 0) return null;
-      const uploadedUrls: string[] = [];
+    try {
+      /////
 
-      for (const file of imageFiles) {
-        const filePath = `waste_photos/${Date.now()}_${file.name}`;
-        let uploaded = false;
-        let lastError: string | null = null;
+      const handleImageUpload = async () => {
+        if (imageFiles.length === 0) return null;
+        const uploadedUrls: string[] = [];
 
-        for (const bucket of ["waste-photos", "product-images"]) {
-          const { error } = await supabase.storage
-            .from(bucket)
-            .upload(filePath, file);
+        for (const file of imageFiles) {
+          const filePath = `waste_photos/${Date.now()}_${file.name}`;
+          let uploaded = false;
+          let lastError: string | null = null;
 
-          if (!error) {
-            const { data: publicUrlData } = supabase.storage
+          for (const bucket of ["waste-photos", "product-images"]) {
+            const { error } = await supabase.storage
               .from(bucket)
-              .getPublicUrl(filePath);
-            if (publicUrlData?.publicUrl)
-              uploadedUrls.push(publicUrlData.publicUrl);
-            uploaded = true;
-            break;
+              .upload(filePath, file);
+
+            if (!error) {
+              const { data: publicUrlData } = supabase.storage
+                .from(bucket)
+                .getPublicUrl(filePath);
+              if (publicUrlData?.publicUrl)
+                uploadedUrls.push(publicUrlData.publicUrl);
+              uploaded = true;
+              break;
+            }
+
+            lastError = error.message;
+            console.error(
+              `Image upload failed for bucket ${bucket}:`,
+              error.message,
+            );
           }
 
-          lastError = error.message;
-          console.error(
-            `Image upload failed for bucket ${bucket}:`,
-            error.message,
-          );
+          if (!uploaded) {
+            toast({
+              title: "Image upload failed",
+              description:
+                lastError ||
+                `Could not upload ${file.name}. Check bucket setup and policies.`,
+              variant: "destructive",
+            });
+          }
         }
 
-        if (!uploaded) {
-          toast({
-            title: "Image upload failed",
-            description:
-              lastError ||
-              `Could not upload ${file.name}. Check bucket setup and policies.`,
-            variant: "destructive",
-          });
-        }
+        return uploadedUrls.length > 0 ? uploadedUrls.join(",") : null;
+      };
+      /////
+      const imageUrl = await handleImageUpload();
+      if (imageFiles.length > 0 && !imageUrl) {
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const { data, error } = await supabase.from("waste_table").insert([
+        {
+          weight: parseFloat(wasteWeight),
+          description: description,
+          latitude: latitude.toString(),
+          longitude: longitude.toString(),
+          submitted_by: account,
+          waste_type: wasteType,
+          image_url: imageUrl,
+          status: "submitted",
+        },
+      ]);
+
+      if (error) {
+        console.error("Insert error:", error);
+        toast({
+          title: "Submission Failed",
+          description: `Database error: ${error.message}`,
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
       }
 
-      return uploadedUrls.length > 0 ? uploadedUrls.join(",") : null;
-    };
-    /////
-    const imageUrl = await handleImageUpload(); // 👈 Add this line before the insert
-    if (imageFiles.length > 0 && !imageUrl) {
-      return;
-    }
-    const { data, error } = await supabase.from("waste_table").insert([
-      {
-        weight: parseFloat(wasteWeight),
-        description: description,
-        latitude: latitude.toString(),
-        longitude: longitude.toString(),
-        submitted_by: account,
-        waste_type: wasteType,
-        image_url: imageUrl,
-        status: "submitted",
-      },
-    ]);
+      const ppTokens = parseFloat(wasteWeight) * 0.1;
+      toast({
+        title: "✅ Waste Submitted!",
+        description: `Pending admin verification. If approved you will earn ${ppTokens.toFixed(1)} PPEN.`,
+      });
 
-    if (error) {
-      console.error("Insert error:", error);
+      // Clear form
+      setWasteWeight("");
+      setWasteType("");
+      setGpsCoords("");
+      setDescription("");
+      imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+      setImageFiles([]);
+      setImagePreviewUrls([]);
+      
+      // Refresh submissions list
+      const { data: updatedSubmissions } = await supabase
+        .from("waste_table")
+        .select("*")
+        .eq("submitted_by", account);
+      if (updatedSubmissions) {
+        setMySubmissions(updatedSubmissions);
+      }
+    } catch (err: any) {
+      console.error("Unexpected error:", err);
       toast({
         title: "Submission Failed",
-        description: "Could not save to the database.",
+        description: `Unexpected error: ${err?.message || 'Please try again'}`,
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const ppTokens = parseFloat(wasteWeight) * 0.1;
-    toast({
-      title: "Waste Submitted!",
-      description: `Pending admin verification. If approved you will earn ${ppTokens.toFixed(1)} PPEN.`,
-    });
-
-    setWasteWeight("");
-    setWasteType("");
-    setGpsCoords("");
-    setDescription("");
-    imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
-    setImageFiles([]);
-    setImagePreviewUrls([]);
   };
 
   const getCurrentLocation = () => {
@@ -471,10 +500,11 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
 
                 <Button
                   onClick={handleWasteSubmission}
+                  disabled={isSubmitting}
                   className="w-full bg-green-600 hover:bg-green-700"
                   size="lg"
                 >
-                  Submit Waste Collection
+                  {isSubmitting ? "Submitting..." : "Submit Waste Collection"}
                 </Button>
               </CardContent>
             </Card>
