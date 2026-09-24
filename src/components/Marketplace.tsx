@@ -36,8 +36,23 @@ interface MarketplaceProps {
 
 const Marketplace = ({ onBack }: MarketplaceProps) => {
   const { theme, toggleTheme } = useTheme();
+  const [ppenAmount, setPpenAmount] = useState("");
+  const [estimatedEth, setEstimatedEth] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const { toast } = useToast();
+
   const handleRedeem = async () => {
     try {
+      if (!ppenAmount || parseFloat(ppenAmount) <= 0) {
+        toast({
+          title: "❌ Invalid Amount",
+          description: "Please enter a valid PPEN amount to redeem.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
@@ -67,19 +82,19 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
         title: "🎉 Redeemed!",
         description: `You received approximately ${estimatedEth} ETH for ${ppenAmount} PPEN.`,
       });
+      
+      setPpenAmount("");
+      setEstimatedEth("");
     } catch (err) {
+      console.error("Redemption error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       toast({
         title: "❌ Redemption Failed",
-        description: "There was an issue processing your redemption.",
+        description: `There was an issue processing your redemption: ${errorMessage}`,
         variant: "destructive",
       });
     }
   };
-  const [ppenAmount, setPpenAmount] = useState("");
-  const [estimatedEth, setEstimatedEth] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const { toast } = useToast();
 
   const products = [
     {
