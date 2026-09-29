@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -9,17 +11,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Recycle, Shield, Moon, Sun } from "lucide-react";
-import { useWallet } from "@/hooks/useWallet";
+import { useBlinkAuth } from "@/hooks/useBlinkAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { checkIsAdmin } from "@/lib/admin";
 import { upsertConnectedUser } from "@/lib/users";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 
 const Admin = () => {
-  const { connect, disconnect, account } = useWallet();
+  const { account, login, logout, isLoggingIn } = useBlinkAuth();
   const { theme, toggleTheme } = useTheme();
   const [allowed, setAllowed] = useState<boolean | null>(null);
-  const [connecting, setConnecting] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!account) {
@@ -39,17 +42,19 @@ const Admin = () => {
     };
   }, [account]);
 
-  const handleConnect = async () => {
-    try {
-      setConnecting(true);
-      await connect();
-    } finally {
-      setConnecting(false);
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    const result = await login(usernameInput);
+    if (!result.ok) {
+      setLoginError(result.error || "Could not verify that Blink username.");
+    } else {
+      setUsernameInput("");
     }
   };
 
   if (account && allowed) {
-    return <AdminDashboard account={account} onDisconnect={disconnect} />;
+    return <AdminDashboard account={account} onDisconnect={logout} />;
   }
 
   return (
@@ -75,32 +80,55 @@ const Admin = () => {
           </div>
           <CardTitle className="dark:text-gray-100">Admin Hub</CardTitle>
           <CardDescription className="dark:text-gray-400">
-            Connect an authorized wallet to review submissions, grant PPEN, and
-            manage users.
+            Log in with an authorized Blink username to review submissions,
+            award sats, and manage users.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {!account && (
-            <Button
-              className="w-full bg-green-700 hover:bg-green-800"
-              onClick={handleConnect}
-              disabled={connecting}
-            >
-              {connecting ? "Connecting..." : "Connect MetaMask"}
-            </Button>
+            <form onSubmit={handleLogin} className="space-y-2">
+              <Label htmlFor="admin-blink-username">
+                Blink username or Lightning Address
+              </Label>
+              <Input
+                id="admin-blink-username"
+                value={usernameInput}
+                onChange={(e) => setUsernameInput(e.target.value)}
+                placeholder="jane_doe or jane_doe@blink.sv"
+                autoCapitalize="none"
+                autoCorrect="off"
+              />
+              {loginError && (
+                <p className="text-xs text-red-600 dark:text-red-400">
+                  {loginError}
+                </p>
+              )}
+              <Button
+                type="submit"
+                className="w-full bg-green-700 hover:bg-green-800"
+                disabled={isLoggingIn}
+              >
+                {isLoggingIn ? "Checking…" : "Log in with Blink"}
+              </Button>
+            </form>
           )}
 
           {account && allowed === null && (
-            <p className="text-center text-sm text-gray-500 dark:text-gray-400">Checking access…</p>
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+              Checking access…
+            </p>
           )}
 
           {account && allowed === false && (
             <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-800 dark:text-red-400">
-              <p className="mb-2 font-medium">This wallet is not an admin.</p>
-              <p className="break-all font-mono text-xs">{account}</p>
+              <p className="mb-2 font-medium">
+                This Blink account is not an admin.
+              </p>
+              <p className="break-all font-mono text-xs">@{account}</p>
               <p className="mt-2">
                 Ask an existing admin to set your role to Admin under Users, or
-                add this address to <code className="font-mono">VITE_ADMIN_WALLETS</code>{" "}
+                add this username to{" "}
+                <code className="font-mono">VITE_ADMIN_BLINK_USERNAMES</code>{" "}
                 and restart the app.
               </p>
             </div>

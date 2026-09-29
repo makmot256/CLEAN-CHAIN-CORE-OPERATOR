@@ -23,7 +23,14 @@ import { CheckCircle2, Clock, Coins, Users, XCircle } from "lucide-react";
 import type { AppUser, WasteSubmission } from "@/lib/types";
 import { rewardForWeight } from "@/lib/admin";
 
-const COLORS = ["#16a34a", "#0d9488", "#2563eb", "#ca8a04", "#dc2626", "#7c3aed"];
+const COLORS = [
+  "#16a34a",
+  "#0d9488",
+  "#2563eb",
+  "#ca8a04",
+  "#dc2626",
+  "#7c3aed",
+];
 
 interface AdminOverviewProps {
   submissions: WasteSubmission[];
@@ -33,15 +40,16 @@ interface AdminOverviewProps {
 const AdminOverview = ({ submissions, users }: AdminOverviewProps) => {
   const pending = submissions.filter(
     (s) =>
-      !s.tokens_awarded &&
-      s.status !== "approved" &&
-      s.status !== "rejected",
+      !s.tokens_awarded && s.status !== "approved" && s.status !== "rejected",
   );
   const approved = submissions.filter((s) => s.status === "approved");
   const rejected = submissions.filter((s) => s.status === "rejected");
   const tokensGranted = submissions
     .filter((s) => s.tokens_awarded)
-    .reduce((sum, s) => sum + Number(s.tokens_amount || rewardForWeight(s.weight)), 0);
+    .reduce(
+      (sum, s) => sum + Number(s.tokens_amount || rewardForWeight(s.weight)),
+      0,
+    );
   const uniqueWallets = new Set(
     submissions.map((s) => s.submitted_by?.toLowerCase()).filter(Boolean),
   ).size;
@@ -59,7 +67,10 @@ const AdminOverview = ({ submissions, users }: AdminOverviewProps) => {
     date.setDate(date.getDate() - (13 - i));
     const key = date.toISOString().slice(0, 10);
     return {
-      day: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      day: date.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      }),
       count: submissions.filter((s) => s.created_at?.startsWith(key)).length,
     };
   });
@@ -75,31 +86,36 @@ const AdminOverview = ({ submissions, users }: AdminOverviewProps) => {
       label: "Pending review",
       value: pending.length,
       icon: Clock,
-      className: "border-amber-200 bg-amber-50 text-amber-800",
+      className:
+        "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300",
     },
     {
       label: "Approved",
       value: approved.length,
       icon: CheckCircle2,
-      className: "border-green-200 bg-green-50 text-green-800",
+      className:
+        "border-green-200 bg-green-50 text-green-800 dark:border-green-900/40 dark:bg-green-950/30 dark:text-green-300",
     },
     {
       label: "Rejected",
       value: rejected.length,
       icon: XCircle,
-      className: "border-red-200 bg-red-50 text-red-800",
+      className:
+        "border-red-200 bg-red-50 text-red-800 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300",
     },
     {
-      label: "PPEN granted",
-      value: tokensGranted.toFixed(2),
+      label: "Sats granted",
+      value: tokensGranted.toFixed(0),
       icon: Coins,
-      className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      className:
+        "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
     },
     {
-      label: "Connected wallets",
+      label: "Connected Blink wallets",
       value: users.length || uniqueWallets,
       icon: Users,
-      className: "border-teal-200 bg-teal-50 text-teal-800",
+      className:
+        "border-teal-200 bg-teal-50 text-teal-800 dark:border-teal-900/40 dark:bg-teal-950/30 dark:text-teal-300",
     },
   ];
 
@@ -126,7 +142,9 @@ const AdminOverview = ({ submissions, users }: AdminOverviewProps) => {
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Submissions (14 days)</CardTitle>
-            <CardDescription>How many waste reports arrived each day</CardDescription>
+            <CardDescription>
+              How many waste reports arrived each day
+            </CardDescription>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -154,7 +172,7 @@ const AdminOverview = ({ submissions, users }: AdminOverviewProps) => {
           </CardHeader>
           <CardContent className="h-72">
             {statusPie.length === 0 ? (
-              <p className="flex h-full items-center justify-center text-sm text-gray-500">
+              <p className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400">
                 No submissions yet
               </p>
             ) : (
@@ -183,11 +201,13 @@ const AdminOverview = ({ submissions, users }: AdminOverviewProps) => {
       <Card>
         <CardHeader>
           <CardTitle>Waste collected by type (kg)</CardTitle>
-          <CardDescription>Total reported weight across all submissions</CardDescription>
+          <CardDescription>
+            Total reported weight across all submissions
+          </CardDescription>
         </CardHeader>
         <CardContent className="h-72">
           {byType.length === 0 ? (
-            <p className="flex h-full items-center justify-center text-sm text-gray-500">
+            <p className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400">
               No waste data yet
             </p>
           ) : (
@@ -197,7 +217,12 @@ const AdminOverview = ({ submissions, users }: AdminOverviewProps) => {
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Bar dataKey="kg" fill="#0d9488" radius={[6, 6, 0, 0]} name="kg" />
+                <Bar
+                  dataKey="kg"
+                  fill="#0d9488"
+                  radius={[6, 6, 0, 0]}
+                  name="kg"
+                />
               </BarChart>
             </ResponsiveContainer>
           )}

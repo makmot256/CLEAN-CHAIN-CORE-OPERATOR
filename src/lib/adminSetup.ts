@@ -11,9 +11,22 @@ ALTER TABLE waste_table ADD COLUMN IF NOT EXISTS is_prominent_location boolean D
 ALTER TABLE waste_table ADD COLUMN IF NOT EXISTS tx_hash text;
 ALTER TABLE waste_table ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
 
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'app_users' AND column_name = 'wallet_address'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'app_users' AND column_name = 'blink_username'
+  ) THEN
+    ALTER TABLE app_users RENAME COLUMN wallet_address TO blink_username;
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS app_users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  wallet_address text UNIQUE NOT NULL,
+  blink_username text UNIQUE NOT NULL,
   display_name text,
   role text NOT NULL DEFAULT 'user',
   status text NOT NULL DEFAULT 'active',
@@ -48,6 +61,6 @@ export const isMissingRelationError = (err: unknown) => {
   return (
     code === "PGRST205" ||
     code === "42P01" ||
-    /app_users|user_wallet|schema cache/i.test(message)
+    /app_users|user_wallet|blink_username|schema cache/i.test(message)
   );
 };

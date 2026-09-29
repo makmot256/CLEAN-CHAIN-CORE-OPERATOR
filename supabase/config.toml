@@ -1,0 +1,11 @@
+# This app has no real Supabase Auth sessions (identity is a Blink username,
+# not a Supabase JWT user), so these functions do their own authorization
+# checks internally and must not be gated by Supabase's JWT verification.
+# Without this, the browser's CORS preflight (OPTIONS, sent with no
+# Authorization header) gets rejected by the gateway before the function
+# code ever runs, breaking every request with a CORS error.
+[functions.blink-lookup-username]
+verify_jwt = false
+
+[functions.blink-approve-submission]
+verify_jwt = false

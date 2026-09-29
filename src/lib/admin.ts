@@ -1,40 +1,36 @@
-import { BrowserProvider, Contract, parseUnits } from "ethers";
 import { supabase } from "@/lib/supabaseClient";
 import {
-  ADMIN_WALLETS,
-  CONTRACTS,
+  ADMIN_BLINK_USERNAMES,
+  BLINK_CONFIG,
   DUPLICATE_RADIUS_METERS,
-  TOKEN_CONFIG,
 } from "@/lib/config";
-import { PlasticPennyABI } from "@/lib/abi/PlasticPenny";
+import { normalizeUsername, shortUsername } from "@/lib/blink";
 import type { WasteSubmission } from "@/lib/types";
 
-export const normalizeAddress = (address: string) => address.trim().toLowerCase();
-
-export const shortAddress = (address?: string | null) => {
-  if (!address) return "—";
-  if (address.length < 12) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-};
+// Kept as aliases so existing imports across the app (users.ts, admin components)
+// keep working — identity is now a Blink username instead of a 0x wallet address.
+export const normalizeAddress = normalizeUsername;
+export const shortAddress = shortUsername;
 
 export const getConfiguredAdminWallets = (): string[] => {
-  const fromEnv = (import.meta.env.VITE_ADMIN_WALLETS as string | undefined) || "";
-  return [...ADMIN_WALLETS, ...fromEnv.split(",")]
-    .map((value) => normalizeAddress(value))
+  const fromEnv =
+    (import.meta.env.VITE_ADMIN_BLINK_USERNAMES as string | undefined) || "";
+  return [...ADMIN_BLINK_USERNAMES, ...fromEnv.split(",")]
+    .map((value) => normalizeUsername(value))
     .filter(Boolean);
 };
 
 export const isConfiguredAdmin = (account?: string | null) => {
   if (!account) return false;
-  return getConfiguredAdminWallets().includes(normalizeAddress(account));
+  return getConfiguredAdminWallets().includes(normalizeUsername(account));
 };
 
-const promoteToAdmin = async (address: string) => {
+const promoteToAdmin = async (username: string) => {
   const now = new Date().toISOString();
   const { data: existing } = await supabase
     .from("app_users")
     .select("id")
-    .eq("wallet_address", address)
+    .eq("blink_username", username)
     .maybeSingle();
 
   if (existing) {
@@ -46,29 +42,31 @@ const promoteToAdmin = async (address: string) => {
   }
 
   await supabase.from("app_users").insert({
-    wallet_address: address,
-    display_name: shortAddress(address),
+    blink_username: username,
+    display_name: shortUsername(username),
     role: "admin",
     status: "active",
     last_seen_at: now,
   });
 };
 
-export const checkIsAdmin = async (account?: string | null): Promise<boolean> => {
+export const checkIsAdmin = async (
+  account?: string | null,
+): Promise<boolean> => {
   if (!account) return false;
-  const address = normalizeAddress(account);
-  if (isConfiguredAdmin(address)) return true;
+  const username = normalizeUsername(account);
+  if (isConfiguredAdmin(username)) return true;
 
   const { data } = await supabase
     .from("app_users")
     .select("role, status")
-    .eq("wallet_address", address)
+    .eq("blink_username", username)
     .maybeSingle();
 
   if (data?.role === "admin" && data?.status === "active") return true;
 
-  // First-run: if no admin wallets are configured and none exist in the DB,
-  // the wallet opening /admin becomes the operator.
+  // First-run: if no admin usernames are configured and none exist in the DB,
+  // the Blink account opening /admin becomes the operator.
   const envAdmins = getConfiguredAdminWallets();
   const { data: admins, error: adminLookupError } = await supabase
     .from("app_users")
@@ -79,15 +77,16 @@ export const checkIsAdmin = async (account?: string | null): Promise<boolean> =>
 
   const noAdminsYet = Boolean(adminLookupError) || !admins?.length;
   if (envAdmins.length === 0 && noAdminsYet) {
-    await promoteToAdmin(address).catch(() => undefined);
+    await promoteToAdmin(username).catch(() => undefined);
     return true;
   }
 
   return false;
 };
 
+// Sats ("Plastic Pennies") awarded for a given weight of collected plastic.
 export const rewardForWeight = (weight: number) =>
-  Number((weight * TOKEN_CONFIG.REWARD_RATE_PER_KG).toFixed(4));
+  Math.max(0, Math.round(Number(weight || 0) * BLINK_CONFIG.SATS_PER_KG));
 
 const toRad = (value: number) => (value * Math.PI) / 180;
 
@@ -132,8 +131,12 @@ export const findPossibleDuplicates = (
     const otherCoords = parseCoords(other);
     const nearby =
       origin && otherCoords
-        ? distanceMeters(origin.lat, origin.lng, otherCoords.lat, otherCoords.lng) <=
-          DUPLICATE_RADIUS_METERS
+        ? distanceMeters(
+            origin.lat,
+            origin.lng,
+            otherCoords.lat,
+            otherCoords.lng,
+          ) <= DUPLICATE_RADIUS_METERS
         : false;
 
     return nearby && (sameWallet || sameType);
@@ -145,30 +148,9 @@ export const canGrantTokens = (opts: {
   isProminentLocation: boolean;
 }) => !opts.isDuplicate && opts.isProminentLocation;
 
-export const grantPpenTokens = async (recipient: string, amount: number) => {
-  if (!window.ethereum) {
-    throw new Error("MetaMask is not available");
-  }
-
-  const provider = new BrowserProvider(window.ethereum);
-  const signer = await provider.getSigner();
-  const contract = new Contract(
-    CONTRACTS.PLASTIC_PENNY,
-    PlasticPennyABI,
-    signer,
-  );
-  const parsed = parseUnits(amount.toString(), TOKEN_CONFIG.DECIMALS);
-
-  try {
-    const tx = await contract.mint(recipient, parsed);
-    await tx.wait();
-    return tx.hash as string;
-  } catch {
-    const tx = await contract.transfer(recipient, parsed);
-    await tx.wait();
-    return tx.hash as string;
-  }
-};
+// Sats payouts now happen server-side via the blink-approve-submission Supabase
+// Edge Function (see src/lib/blink.ts -> approveSubmission), which is the only
+// place that holds the Blink API key. There is no client-side mint anymore.
 
 export const imageUrls = (value?: string | null) =>
   (value || "")

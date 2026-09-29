@@ -55,7 +55,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import WasteMap from "./WasteMap";
 import { supabase } from "@/lib/supabaseClient";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
-import { useWallet } from "@/hooks/useWallet";
+import { useBlinkAuth } from "@/hooks/useBlinkAuth";
+import { rewardForWeight } from "@/lib/admin";
 
 interface WasteTrackerDashboardProps {
   onBack: () => void;
@@ -72,7 +73,7 @@ const WasteTrackerDashboard = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
-  const { account } = useWallet();
+  const { account } = useBlinkAuth();
   const { balance: tokenBalance, isLoading: balanceLoading } =
     useTokenBalance(account);
 
@@ -110,7 +111,7 @@ const WasteTrackerDashboard = ({
           weight: job.weight,
           location: job.description ?? "Unknown",
           user: job.submitted_by,
-          reward: `${(job.weight * 0.1).toFixed(1)} PPEN`,
+          reward: `${rewardForWeight(job.weight)} sats`,
           completedAt: new Date(
             job.updated_at || job.created_at,
           ).toLocaleString(), // if timestamp exists
@@ -131,7 +132,7 @@ const WasteTrackerDashboard = ({
       location: "Downtown Park",
       user: "Alice Johnson",
       distance: "0.8km",
-      reward: "3.2 PPEN",
+      reward: "3.2 sats",
       status: "pending",
     },
     {
@@ -141,7 +142,7 @@ const WasteTrackerDashboard = ({
       location: "Shopping Mall",
       user: "Bob Wilson",
       distance: "1.2km",
-      reward: "2.1 PPEN",
+      reward: "2.1 sats",
       status: "pending",
     },
     {
@@ -151,7 +152,7 @@ const WasteTrackerDashboard = ({
       location: "Beach Area",
       user: "Carol Davis",
       distance: "2.5km",
-      reward: "1.8 PPEN",
+      reward: "1.8 sats",
       status: "pending",
     },
   ];
@@ -164,7 +165,7 @@ const WasteTrackerDashboard = ({
     location: job.description ?? "Unknown",
     user: job.submitted_by,
     distance: "—",
-    reward: `${(job.weight * 1.0).toFixed(1)} PPEN`, // → use numeric weight
+    reward: `${rewardForWeight(job.weight)} sats`,
   }));
 
   //const completedJobs = [
@@ -191,7 +192,7 @@ const WasteTrackerDashboard = ({
     toast({
       title: "Job accepted",
       description:
-        "Pickup recorded. PPEN is granted after an admin verifies the report is unique and at a prominent disposal site.",
+        "Pickup recorded. Sats are granted after an admin verifies the report is unique and at a prominent disposal site.",
     });
 
     const newCompleted: CompletedJob = {
@@ -212,7 +213,7 @@ const WasteTrackerDashboard = ({
     toast({
       title: "Job Completed!",
       description:
-        "Transaction signed and verified on blockchain. PPEN tokens have been awarded.",
+        "Verified. Sats have been sent to the collector's Blink wallet.",
     });
   };
 
@@ -325,7 +326,7 @@ const WasteTrackerDashboard = ({
               </Button>
               <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-4 py-2">
                 <Coins className="w-4 h-4 mr-2" />
-                {balanceLoading ? "Loading..." : `${tokenBalance} PPEN`}
+                {balanceLoading ? "Loading..." : `${tokenBalance} sats`}
               </Badge>
               {/* <Button onClick={onMarketplace} className="bg-emerald-600 hover:bg-emerald-700">
                 Marketplace
@@ -345,9 +346,9 @@ const WasteTrackerDashboard = ({
 
           {/* Map View Tab */}
           <TabsContent value="map-view" className="space-y-6">
-            <Card className="border-emerald-200">
+            <Card className="border-emerald-200 dark:border-emerald-900/40">
               <CardHeader>
-                <CardTitle className="flex items-center text-emerald-700">
+                <CardTitle className="flex items-center text-emerald-700 dark:text-emerald-400">
                   <MapPin className="w-5 h-5 mr-2" />
                   Live Waste Collection Map
                 </CardTitle>
@@ -356,48 +357,45 @@ const WasteTrackerDashboard = ({
                   routes
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div
-                    style={{ height: "500px" }}
-                    className="rounded-lg overflow-hidden border border-emerald-200"
-                  >
-                    {/* <ErrorBoundary>
+              <CardContent className="space-y-6">
+                <div className="isolate h-[420px] w-full overflow-hidden rounded-lg border border-emerald-200 dark:border-emerald-900/40 sm:h-[500px]">
+                  {/* <ErrorBoundary>
   <WasteMap />
 </ErrorBoundary> */}
-                    <WasteMap />
-                  </div>
+                  <WasteMap />
+                </div>
 
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <Card className="bg-red-50 border-red-200">
-                      <CardContent className="p-4 text-center">
-                        <div className="text-2xl font-bold text-red-600">3</div>
-                        <div className="text-sm text-red-700">
-                          Pending Collections
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-green-50 border-green-200">
-                      <CardContent className="p-4 text-center">
-                        <div className="text-2xl font-bold text-green-600">
-                          12
-                        </div>
-                        <div className="text-sm text-green-700">
-                          Completed Today
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-teal-50 border-teal-200">
-                      <CardContent className="p-4 text-center">
-                        <div className="text-2xl font-bold text-teal-600">
-                          8.2km
-                        </div>
-                        <div className="text-sm text-teal-700">
-                          Optimal Route
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card className="bg-red-50 border-red-200 dark:border-red-900/40 dark:bg-red-950/30">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                        3
+                      </div>
+                      <div className="text-sm text-red-700 dark:text-red-300">
+                        Pending Collections
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-green-50 border-green-200 dark:border-green-900/40 dark:bg-green-950/30">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        12
+                      </div>
+                      <div className="text-sm text-green-700 dark:text-green-300">
+                        Completed Today
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-teal-50 border-teal-200 dark:border-teal-900/40 dark:bg-teal-950/30">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+                        8.2km
+                      </div>
+                      <div className="text-sm text-teal-700 dark:text-teal-300">
+                        Optimal Route
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </CardContent>
             </Card>
@@ -451,7 +449,7 @@ const WasteTrackerDashboard = ({
                           </div>
                           <div className="bg-blue-50 p-3 rounded-lg">
                             <div className="text-sm font-medium text-blue-800">
-                              Reward: {job.weight.toFixed(1)} PPEN
+                              Reward: {rewardForWeight(job.weight)} sats
                             </div>
                             <div className="text-xs text-blue-600">
                               Plus verification bonus

@@ -12,7 +12,6 @@ import {
   MapPin,
   Users,
   Recycle,
-  Coins,
   Leaf,
   ArrowRight,
   Globe,
@@ -37,7 +36,7 @@ import Marketplace from "@/components/Marketplace";
 import HeroCanvas from "@/components/three/HeroCanvas";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
-import { useWallet } from "@/hooks/useWallet";
+import { useBlinkAuth } from "@/hooks/useBlinkAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
 import { upsertConnectedUser } from "@/lib/users";
@@ -65,8 +64,8 @@ const ROLE_CARDS = [
     bullets: [
       "Submit collected waste with GPS data",
       "Upload photos and weight details",
-      "Earn PPEN tokens for contributions",
-      "Redeem tokens for crypto or goods",
+      "Earn Plastic Pennies (sats) for contributions",
+      "Sats are paid straight to your Blink wallet",
       "Access educational content",
     ],
     enterLabel: "Enter as User",
@@ -85,7 +84,7 @@ const ROLE_CARDS = [
       "Accept pickup jobs from users",
       "Verify and sign transactions",
       "Optimize collection routes",
-      "Earn PPEN tokens for services",
+      "Earn Plastic Pennies (sats) for services",
     ],
     enterLabel: "Enter as Tracker",
   },
@@ -113,7 +112,12 @@ const STATS = [
   { value: 50000, suffix: "+", label: "Plastic Items Collected" },
   { value: 1200, suffix: "+", label: "Active Users" },
   { value: 750, suffix: "+", label: "Waste Trackers" },
-  { value: 25000, prefix: "₽ ", label: "PPEN Tokens Earned" },
+  {
+    value: 25000,
+    prefix: "",
+    suffix: " sats",
+    label: "Plastic Pennies Earned",
+  },
 ];
 
 const Index = () => {
@@ -123,9 +127,9 @@ const Index = () => {
   const [userType, setUserType] = useState<
     "user" | "tracker" | "logistics" | null
   >(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
 
-  const { connect, disconnect, account } = useWallet();
+  const { account, login, logout, isLoggingIn } = useBlinkAuth();
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
   const heroRef = useRef<HTMLDivElement>(null);
@@ -186,33 +190,30 @@ const Index = () => {
     return () => ctx.revert();
   }, [activeView]);
 
-  const handleConnectWallet = async () => {
-    try {
-      setIsConnecting(true);
-      await connect();
+  const handleLoginWithBlink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = await login(usernameInput);
+    if (result.ok) {
+      setUsernameInput("");
       toast({
-        title: "Wallet connected",
+        title: "Logged in with Blink",
         description:
           "You can now access Users, Waste Trackers, and Logistics Organizations.",
       });
-    } catch (err) {
-      console.error("User rejected connection or error", err);
+    } else {
       toast({
-        title: "Wallet connection failed",
-        description: "Please approve the MetaMask prompt and try again.",
+        title: "Login failed",
+        description: result.error || "Could not verify that Blink username.",
         variant: "destructive",
       });
-    } finally {
-      setIsConnecting(false);
     }
   };
 
   const handleRoleSelect = (role: "user" | "tracker" | "logistics") => {
     if (!account) {
       toast({
-        title: "Connect wallet first",
-        description:
-          "Use the Connect Wallet button in the top-right to continue.",
+        title: "Log in first",
+        description: "Enter your Blink username in the top-right to continue.",
       });
       return;
     }
@@ -223,7 +224,7 @@ const Index = () => {
   };
 
   const handleDisconnect = () => {
-    disconnect();
+    logout();
     // useEffect will reset activeView and userType
   };
 
@@ -332,31 +333,38 @@ const Index = () => {
                   variant="outline"
                   className="hidden border-green-300 dark:border-green-700 px-3 py-1 text-xs text-green-800 dark:text-green-400 sm:inline-flex"
                 >
-                  {account.slice(0, 6)}...{account.slice(-4)}
+                  @{account}
                 </Badge>
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={handleDisconnect}
                 >
-                  Disconnect
+                  Log out
                 </Button>
               </>
             ) : (
-              <>
-                <Badge className="hidden bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 sm:inline-flex">
-                  <Coins className="mr-1 h-3 w-3" />
-                  PPEN Token
-                </Badge>
+              <form
+                onSubmit={handleLoginWithBlink}
+                className="flex items-center gap-2"
+              >
+                <Input
+                  value={usernameInput}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                  placeholder="username or you@blink.sv"
+                  className="h-9 w-32 sm:w-48"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                />
                 <Button
+                  type="submit"
                   size="sm"
-                  onClick={handleConnectWallet}
-                  disabled={isConnecting}
-                  className="btn-brand border-0"
+                  disabled={isLoggingIn}
+                  className="btn-brand border-0 whitespace-nowrap"
                 >
-                  {isConnecting ? "Connecting..." : "Connect Wallet"}
+                  {isLoggingIn ? "Checking…" : "Login with Blink"}
                 </Button>
-              </>
+              </form>
             )}
           </div>
         </div>
@@ -393,9 +401,10 @@ const Index = () => {
               data-hero-sub
               className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-600 dark:text-gray-300"
             >
-              Join the revolutionary blockchain-powered ecosystem where plastic
-              waste becomes PLASTIC PENNY (PPEN) tokens, creating economic
-              opportunities while cleaning our environment.
+              Join the revolutionary Bitcoin Lightning-powered ecosystem where
+              plastic waste becomes PLASTIC PENNY rewards — paid out in real
+              sats to your Blink wallet — creating economic opportunities while
+              cleaning our environment.
             </p>
 
             <div className="mb-14 flex flex-wrap items-center justify-center gap-4">
@@ -464,7 +473,7 @@ const Index = () => {
             </h3>
             {!account && (
               <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                Connect your MetaMask wallet from the top-right to unlock all
+                Log in with your Blink username from the top-right to unlock all
                 categories.
               </p>
             )}
@@ -487,10 +496,14 @@ const Index = () => {
                     >
                       <Icon className="h-8 w-8 text-white" />
                     </div>
-                    <CardTitle className={`text-2xl ${role.titleColor} dark:text-green-400`}>
+                    <CardTitle
+                      className={`text-2xl ${role.titleColor} dark:text-green-400`}
+                    >
                       {role.title}
                     </CardTitle>
-                    <CardDescription className="dark:text-gray-400">{role.subtitle}</CardDescription>
+                    <CardDescription className="dark:text-gray-400">
+                      {role.subtitle}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
@@ -503,7 +516,7 @@ const Index = () => {
                       disabled={!account}
                       className={`w-full bg-gradient-to-r ${role.gradient} border-0 text-white shadow-md transition-all hover:shadow-lg`}
                     >
-                      {account ? role.enterLabel : "Connect Wallet First"}
+                      {account ? role.enterLabel : "Login with Blink First"}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardContent>
@@ -525,14 +538,19 @@ const Index = () => {
             className="grid gap-8 text-center md:grid-cols-4"
           >
             {STATS.map((stat) => (
-              <div key={stat.label} className="glass-panel dark:bg-gray-900/50 dark:border-gray-800 rounded-2xl p-6">
+              <div
+                key={stat.label}
+                className="glass-panel dark:bg-gray-900/50 dark:border-gray-800 rounded-2xl p-6"
+              >
                 <AnimatedCounter
                   value={stat.value}
                   prefix={stat.prefix}
                   suffix={stat.suffix}
                   className="text-gradient-brand text-3xl font-bold"
                 />
-                <div className="mt-2 text-gray-600 dark:text-gray-300">{stat.label}</div>
+                <div className="mt-2 text-gray-600 dark:text-gray-300">
+                  {stat.label}
+                </div>
               </div>
             ))}
           </ScrollReveal>
@@ -677,7 +695,10 @@ const Index = () => {
                 <a href="#" className="transition-colors hover:text-green-400">
                   Cookie Policy
                 </a>
-                <Link to="/admin" className="transition-colors hover:text-green-400">
+                <Link
+                  to="/admin"
+                  className="transition-colors hover:text-green-400"
+                >
                   Admin Hub
                 </Link>
               </div>

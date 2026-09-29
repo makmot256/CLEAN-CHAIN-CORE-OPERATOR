@@ -46,6 +46,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { normalizeAddress, shortAddress } from "@/lib/admin";
+import { isValidBlinkUsernameFormat } from "@/lib/blink";
 import type { AppUser, UserRole, UserStatus } from "@/lib/types";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
@@ -55,7 +56,7 @@ interface AdminUsersProps {
 }
 
 const EMPTY_FORM = {
-  wallet_address: "",
+  blink_username: "",
   display_name: "",
   role: "user" as UserRole,
   status: "active" as UserStatus,
@@ -79,7 +80,7 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
   const openEdit = (user: AppUser) => {
     setEditing(user);
     setForm({
-      wallet_address: user.wallet_address,
+      blink_username: user.blink_username,
       display_name: user.display_name || "",
       role: user.role,
       status: user.status,
@@ -89,11 +90,11 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
   };
 
   const handleSave = async () => {
-    const wallet_address = normalizeAddress(form.wallet_address);
-    if (!wallet_address || !wallet_address.startsWith("0x") || wallet_address.length < 10) {
+    const blink_username = normalizeAddress(form.blink_username);
+    if (!blink_username || !isValidBlinkUsernameFormat(blink_username)) {
       toast({
-        title: "Invalid wallet",
-        description: "Enter a full Ethereum address starting with 0x.",
+        title: "Invalid Blink username",
+        description: "Usernames are 3-50 letters, numbers or underscores.",
         variant: "destructive",
       });
       return;
@@ -102,8 +103,8 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
     setBusy(true);
     try {
       const payload = {
-        wallet_address,
-        display_name: form.display_name.trim() || shortAddress(wallet_address),
+        blink_username,
+        display_name: form.display_name.trim() || shortAddress(blink_username),
         role: form.role,
         status: form.status,
         notes: form.notes.trim() || null,
@@ -133,7 +134,10 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
     if (!deleting) return;
     setBusy(true);
     try {
-      const { error } = await supabase.from("app_users").delete().eq("id", deleting.id);
+      const { error } = await supabase
+        .from("app_users")
+        .delete()
+        .eq("id", deleting.id);
       if (error) throw error;
       toast({ title: "User removed" });
       setDeleting(null);
@@ -156,10 +160,13 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
           <div>
             <CardTitle>User management</CardTitle>
             <CardDescription>
-              Create, edit, suspend, or remove wallets and their roles
+              Create, edit, suspend, or remove Blink accounts and their roles
             </CardDescription>
           </div>
-          <Button onClick={openCreate} className="bg-green-700 hover:bg-green-800">
+          <Button
+            onClick={openCreate}
+            className="bg-green-700 hover:bg-green-800"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Add user
           </Button>
@@ -169,7 +176,7 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Wallet</TableHead>
+                <TableHead>Blink username</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last seen</TableHead>
@@ -179,23 +186,29 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
             <TableBody>
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-gray-500">
-                    No users yet. They appear when a wallet connects, or add one here.
+                  <TableCell
+                    colSpan={6}
+                    className="py-10 text-center text-gray-500 dark:text-gray-400"
+                  >
+                    No users yet. They appear when someone logs in with Blink,
+                    or add one here.
                   </TableCell>
                 </TableRow>
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <div className="font-medium">{user.display_name || "—"}</div>
+                      <div className="font-medium">
+                        {user.display_name || "—"}
+                      </div>
                       {user.notes && (
-                        <div className="max-w-[200px] truncate text-xs text-gray-500">
+                        <div className="max-w-[200px] truncate text-xs text-gray-500 dark:text-gray-400">
                           {user.notes}
                         </div>
                       )}
                     </TableCell>
                     <TableCell className="font-mono text-xs">
-                      {shortAddress(user.wallet_address)}
+                      {shortAddress(user.blink_username)}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">
@@ -206,20 +219,24 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
                       <Badge
                         className={
                           user.status === "active"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-200 text-gray-700"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                            : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
                         }
                       >
                         {user.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs text-gray-600">
+                    <TableCell className="text-xs text-gray-600 dark:text-gray-400">
                       {user.last_seen_at
                         ? new Date(user.last_seen_at).toLocaleString()
                         : "—"}
                     </TableCell>
                     <TableCell className="space-x-2 whitespace-nowrap">
-                      <Button size="icon" variant="outline" onClick={() => openEdit(user)}>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => openEdit(user)}
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
@@ -245,15 +262,18 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Wallet address</Label>
+              <Label>Blink username</Label>
               <Input
                 className="mt-1 font-mono"
-                value={form.wallet_address}
+                value={form.blink_username}
                 disabled={Boolean(editing)}
                 onChange={(e) =>
-                  setForm((prev) => ({ ...prev, wallet_address: e.target.value }))
+                  setForm((prev) => ({
+                    ...prev,
+                    blink_username: e.target.value,
+                  }))
                 }
-                placeholder="0x..."
+                placeholder="e.g. jane_doe or jane_doe@blink.sv"
               />
             </div>
             <div>
@@ -309,28 +329,41 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
               <Textarea
                 className="mt-1"
                 value={form.notes}
-                onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, notes: e.target.value }))
+                }
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+            <Button
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={busy}
+            >
               Cancel
             </Button>
-            <Button className="bg-green-700 hover:bg-green-800" onClick={handleSave} disabled={busy}>
+            <Button
+              className="bg-green-700 hover:bg-green-800"
+              onClick={handleSave}
+              disabled={busy}
+            >
               Save
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}>
+      <AlertDialog
+        open={Boolean(deleting)}
+        onOpenChange={(open) => !open && setDeleting(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove this user?</AlertDialogTitle>
             <AlertDialogDescription>
               {deleting
-                ? `${deleting.display_name || shortAddress(deleting.wallet_address)} will be deleted from the admin directory. Waste submissions stay in the database.`
+                ? `${deleting.display_name || shortAddress(deleting.blink_username)} will be deleted from the admin directory. Waste submissions stay in the database.`
                 : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -4,22 +4,22 @@ import { isMissingRelationError } from "@/lib/adminSetup";
 import type { AppUser, UserRole } from "@/lib/types";
 
 export const upsertConnectedUser = async (
-  wallet: string,
+  username: string,
   roleHint?: Exclude<UserRole, "admin">,
 ) => {
-  const wallet_address = normalizeAddress(wallet);
-  if (!wallet_address) return;
+  const blink_username = normalizeAddress(username);
+  if (!blink_username) return;
 
   const { data: existing, error: existingError } = await supabase
     .from("app_users")
     .select("*")
-    .eq("wallet_address", wallet_address)
+    .eq("blink_username", blink_username)
     .maybeSingle();
 
   if (existingError && isMissingRelationError(existingError)) return;
 
   const now = new Date().toISOString();
-  const configuredAdmin = isConfiguredAdmin(wallet_address);
+  const configuredAdmin = isConfiguredAdmin(blink_username);
 
   if (existing) {
     const updates: Record<string, unknown> = { last_seen_at: now };
@@ -34,8 +34,8 @@ export const upsertConnectedUser = async (
   }
 
   await supabase.from("app_users").insert({
-    wallet_address,
-    display_name: shortAddress(wallet_address),
+    blink_username,
+    display_name: shortAddress(blink_username),
     role: configuredAdmin ? "admin" : roleHint || "user",
     status: "active",
     last_seen_at: now,

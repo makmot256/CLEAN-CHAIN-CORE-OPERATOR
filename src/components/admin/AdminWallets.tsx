@@ -58,8 +58,8 @@ const AdminWallets = ({ users, submissions, wallets }: AdminWalletsProps) => {
   };
 
   users.forEach((user) => {
-    const row = ensure(user.wallet_address);
-    row.name = user.display_name || shortAddress(user.wallet_address);
+    const row = ensure(user.blink_username);
+    row.name = user.display_name || shortAddress(user.blink_username);
     row.role = user.role;
     row.status = user.status;
     row.lastSeen = user.last_seen_at;
@@ -82,34 +82,40 @@ const AdminWallets = ({ users, submissions, wallets }: AdminWalletsProps) => {
     if (!row.tokens) row.tokens = Number(wallet.token_balance || 0);
   });
 
-  const rows = Array.from(byWallet.values()).sort((a, b) => b.reports - a.reports);
+  const rows = Array.from(byWallet.values()).sort(
+    (a, b) => b.reports - a.reports,
+  );
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Connected wallets</CardTitle>
+        <CardTitle>Connected Blink wallets</CardTitle>
         <CardDescription>
-          Every wallet that has connected or submitted waste, with activity and PPEN granted
+          Every Blink username that has logged in or submitted waste, with
+          activity and sats granted
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Wallet</TableHead>
+              <TableHead>Blink username</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Reports</TableHead>
               <TableHead>Approved</TableHead>
               <TableHead>kg reported</TableHead>
-              <TableHead>PPEN granted</TableHead>
+              <TableHead>Sats granted</TableHead>
               <TableHead>Last activity</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-10 text-center text-gray-500">
-                  No wallets recorded yet.
+                <TableCell
+                  colSpan={7}
+                  className="py-10 text-center text-gray-500 dark:text-gray-400"
+                >
+                  No Blink wallets recorded yet.
                 </TableCell>
               </TableRow>
             ) : (
@@ -117,7 +123,7 @@ const AdminWallets = ({ users, submissions, wallets }: AdminWalletsProps) => {
                 <TableRow key={row.address}>
                   <TableCell>
                     <div className="font-medium">{row.name}</div>
-                    <div className="font-mono text-xs text-gray-500">
+                    <div className="font-mono text-xs text-gray-500 dark:text-gray-400">
                       {shortAddress(row.address)}
                     </div>
                   </TableCell>
@@ -129,11 +135,13 @@ const AdminWallets = ({ users, submissions, wallets }: AdminWalletsProps) => {
                   <TableCell>{row.reports}</TableCell>
                   <TableCell>{row.approved}</TableCell>
                   <TableCell>{row.kg.toFixed(1)}</TableCell>
-                  <TableCell className="font-medium text-green-700">
+                  <TableCell className="font-medium text-green-700 dark:text-green-400">
                     {row.tokens.toFixed(2)}
                   </TableCell>
-                  <TableCell className="text-xs text-gray-600">
-                    {row.lastSeen ? new Date(row.lastSeen).toLocaleString() : "—"}
+                  <TableCell className="text-xs text-gray-600 dark:text-gray-400">
+                    {row.lastSeen
+                      ? new Date(row.lastSeen).toLocaleString()
+                      : "—"}
                   </TableCell>
                 </TableRow>
               ))

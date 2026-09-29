@@ -12,10 +12,24 @@ ALTER TABLE waste_table ADD COLUMN IF NOT EXISTS is_prominent_location boolean D
 ALTER TABLE waste_table ADD COLUMN IF NOT EXISTS tx_hash text;
 ALTER TABLE waste_table ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
 
--- Registered / connected wallets with admin-managed roles
+-- If an older wallet-address-based app_users table already exists, migrate it in place.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'app_users' AND column_name = 'wallet_address'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'app_users' AND column_name = 'blink_username'
+  ) THEN
+    ALTER TABLE app_users RENAME COLUMN wallet_address TO blink_username;
+  END IF;
+END $$;
+
+-- Registered / logged-in Blink (Lightning wallet) accounts with admin-managed roles
 CREATE TABLE IF NOT EXISTS app_users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  wallet_address text UNIQUE NOT NULL,
+  blink_username text UNIQUE NOT NULL,
   display_name text,
   role text NOT NULL DEFAULT 'user',
   status text NOT NULL DEFAULT 'active',
@@ -25,7 +39,9 @@ CREATE TABLE IF NOT EXISTS app_users (
   updated_at timestamptz DEFAULT now()
 );
 
--- Off-chain token balance ledger (optional companion to on-chain PPEN)
+-- Off-chain sats ("Plastic Pennies") ledger — lifetime sats earned per Blink username.
+-- Real payouts are sent by the blink-approve-submission Edge Function directly to the
+-- user's Blink Lightning Address; this table just tracks totals for the UI.
 CREATE TABLE IF NOT EXISTS user_wallet (
   account text PRIMARY KEY,
   token_balance numeric DEFAULT 0,

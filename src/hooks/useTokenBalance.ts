@@ -1,7 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ethers, BrowserProvider, formatUnits } from 'ethers';
-import { CONTRACTS, TOKEN_CONFIG } from '@/lib/config';
-import { PlasticPennyABI } from '@/lib/abi/PlasticPenny';
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 interface UseTokenBalanceResult {
   balance: string;
@@ -11,15 +9,24 @@ interface UseTokenBalanceResult {
   refetch: () => Promise<void>;
 }
 
-export const useTokenBalance = (account: string | null | undefined): UseTokenBalanceResult => {
-  const [balance, setBalance] = useState<string>('0');
+/**
+ * Reads the lifetime sats ("Plastic Pennies") earned via the app for a given
+ * Blink username, from the user_wallet table. This is an off-chain ledger
+ * maintained server-side by the blink-approve-submission Edge Function
+ * whenever an admin approves a waste submission — it is not a live query of
+ * the user's actual Blink wallet balance (we never hold their Blink API key).
+ */
+export const useTokenBalance = (
+  account: string | null | undefined,
+): UseTokenBalanceResult => {
+  const [balance, setBalance] = useState<string>("0");
   const [rawBalance, setRawBalance] = useState<bigint>(BigInt(0));
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchBalance = useCallback(async () => {
-    if (!account || !window.ethereum) {
-      setBalance('0');
+    if (!account) {
+      setBalance("0");
       setRawBalance(BigInt(0));
       return;
     }
@@ -28,22 +35,21 @@ export const useTokenBalance = (account: string | null | undefined): UseTokenBal
     setError(null);
 
     try {
-      const provider = new BrowserProvider(window.ethereum);
-      const contract = new ethers.Contract(
-        CONTRACTS.PLASTIC_PENNY,
-        PlasticPennyABI,
-        provider
-      );
+      const { data, error: queryError } = await supabase
+        .from("user_wallet")
+        .select("token_balance")
+        .eq("account", account)
+        .maybeSingle();
 
-      const balanceRaw = await contract.balanceOf(account);
-      const formattedBalance = formatUnits(balanceRaw, TOKEN_CONFIG.DECIMALS);
-      
-      setRawBalance(balanceRaw);
-      setBalance(parseFloat(formattedBalance).toFixed(2));
+      if (queryError) throw queryError;
+
+      const sats = Math.max(0, Math.round(Number(data?.token_balance ?? 0)));
+      setBalance(String(sats));
+      setRawBalance(BigInt(sats));
     } catch (err) {
-      console.error('Error fetching token balance:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch balance');
-      setBalance('0');
+      console.error("Error fetching sats balance:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch balance");
+      setBalance("0");
       setRawBalance(BigInt(0));
     } finally {
       setIsLoading(false);

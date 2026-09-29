@@ -35,9 +35,10 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ethers } from "ethers";
-import { useWallet } from "@/hooks/useWallet";
+import { useBlinkAuth } from "@/hooks/useBlinkAuth";
 import { supabase } from "@/lib/supabaseClient";
-import { CONTRACTS, TOKEN_CONFIG } from "@/lib/config";
+import { CONTRACTS, TOKEN_CONFIG, BLINK_CONFIG } from "@/lib/config";
+import { rewardForWeight } from "@/lib/admin";
 import { PaymentHandlerABI } from "@/lib/abi/PaymentHandler";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -49,7 +50,7 @@ interface UserDashboardProps {
 
 const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
   const { toast } = useToast();
-  const { account } = useWallet();
+  const { account } = useBlinkAuth();
   const { theme, toggleTheme } = useTheme();
   const { balance: tokenBalance, isLoading: balanceLoading } =
     useTokenBalance(account);
@@ -109,7 +110,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
 
   const handleWasteSubmission = async () => {
     if (isSubmitting) return;
-    
+
     if (!wasteWeight || !wasteType || !gpsCoords) {
       toast({
         title: "Missing Information",
@@ -187,7 +188,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
         setIsSubmitting(false);
         return;
       }
-      
+
       const { data, error } = await supabase.from("waste_table").insert([
         {
           weight: parseFloat(wasteWeight),
@@ -212,10 +213,10 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
         return;
       }
 
-      const ppTokens = parseFloat(wasteWeight) * 0.1;
+      const satsReward = rewardForWeight(parseFloat(wasteWeight));
       toast({
-        title: "✅ Waste Submitted!",
-        description: `Pending admin verification. If approved you will earn ${ppTokens.toFixed(1)} PPEN.`,
+        title: "Waste Submitted!",
+        description: `Pending admin verification. If approved you will earn ${satsReward} sats.`,
       });
 
       // Clear form
@@ -226,7 +227,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
       imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
       setImageFiles([]);
       setImagePreviewUrls([]);
-      
+
       // Refresh submissions list
       const { data: updatedSubmissions } = await supabase
         .from("waste_table")
@@ -239,7 +240,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
       console.error("Unexpected error:", err);
       toast({
         title: "Submission Failed",
-        description: `Unexpected error: ${err?.message || 'Please try again'}`,
+        description: `Unexpected error: ${err?.message || "Please try again"}`,
         variant: "destructive",
       });
     } finally {
@@ -292,7 +293,9 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
   };
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Connected as: {account}</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+        Connected as: {account}
+      </p>
 
       {/* Header */}
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-green-200 dark:border-gray-800 sticky top-0 z-50">
@@ -326,7 +329,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
               </Button>
               <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-4 py-2">
                 <Coins className="w-4 h-4 mr-2" />
-                {balanceLoading ? "Loading..." : `${tokenBalance} PPEN`}
+                {balanceLoading ? "Loading..." : `${tokenBalance} sats`}
               </Badge>
               <Button
                 onClick={onMarketplace}
@@ -357,14 +360,20 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                   Submit Collected Waste
                 </CardTitle>
                 <CardDescription className="dark:text-gray-400">
-                  Document your plastic waste collection and earn PPEN tokens
+                  Document your plastic waste collection and earn sats (Plastic
+                  Pennies)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="waste-type" className="dark:text-gray-300">Waste Type</Label>
+                      <Label
+                        htmlFor="waste-type"
+                        className="dark:text-gray-300"
+                      >
+                        Waste Type
+                      </Label>
                       <select
                         className="w-full p-2 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded-md"
                         value={wasteType}
@@ -380,7 +389,9 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                     </div>
 
                     <div>
-                      <Label htmlFor="weight" className="dark:text-gray-300">Weight (kg)</Label>
+                      <Label htmlFor="weight" className="dark:text-gray-300">
+                        Weight (kg)
+                      </Label>
                       <Input
                         id="weight"
                         type="number"
@@ -391,7 +402,9 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                     </div>
 
                     <div>
-                      <Label htmlFor="gps" className="dark:text-gray-300">GPS Coordinates</Label>
+                      <Label htmlFor="gps" className="dark:text-gray-300">
+                        GPS Coordinates
+                      </Label>
                       <div className="flex space-x-2">
                         <Input
                           id="gps"
@@ -469,7 +482,10 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                       </div>
                     </label>
                     <div>
-                      <Label htmlFor="description" className="dark:text-gray-300">
+                      <Label
+                        htmlFor="description"
+                        className="dark:text-gray-300"
+                      >
                         Description (Optional)
                       </Label>
                       <textarea
@@ -490,10 +506,10 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                   </h4>
                   <p className="text-sm text-green-700 dark:text-green-300">
                     {wasteWeight
-                      ? `${(parseFloat(wasteWeight) * 0.1).toFixed(1)} PPEN tokens`
-                      : "0 PPEN tokens"}
+                      ? `${rewardForWeight(parseFloat(wasteWeight))} sats`
+                      : "0 sats"}
                     <span className="text-gray-600 dark:text-gray-400 ml-2">
-                      (0.1 PPEN per kg)
+                      ({BLINK_CONFIG.SATS_PER_KG} sats per kg)
                     </span>
                   </p>
                 </div>
@@ -514,7 +530,10 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
           <TabsContent value="my-submissions" className="space-y-6">
             <div className="grid gap-4">
               {mySubmissions.map((submission) => (
-                <Card key={submission.id} className="border-green-200 dark:border-gray-800 dark:bg-gray-900/50">
+                <Card
+                  key={submission.id}
+                  className="border-green-200 dark:border-gray-800 dark:bg-gray-900/50"
+                >
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start">
                       <div>
@@ -532,7 +551,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                       </div>
                       <div className="text-right">
                         <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                          +{(submission.weight * 0.1).toFixed(1)} PPEN
+                          +{rewardForWeight(submission.weight)} sats
                         </Badge>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {submission.status === "accepted"
@@ -588,7 +607,9 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                       className="hover:shadow-md transition-shadow dark:bg-gray-800/50 dark:border-gray-700"
                     >
                       <CardContent className="p-4">
-                        <h4 className="font-semibold mb-2 dark:text-gray-200">{course.title}</h4>
+                        <h4 className="font-semibold mb-2 dark:text-gray-200">
+                          {course.title}
+                        </h4>
                         <div className="flex justify-between items-center">
                           <div className="text-sm text-gray-600 dark:text-gray-400">
                             <span>{course.duration}</span>

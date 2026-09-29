@@ -1,10 +1,6 @@
 export type UserRole = "user" | "tracker" | "logistics" | "admin";
 export type UserStatus = "active" | "suspended";
-export type WasteStatus =
-  | "submitted"
-  | "accepted"
-  | "approved"
-  | "rejected";
+export type WasteStatus = "submitted" | "accepted" | "approved" | "rejected";
 
 export interface WasteSubmission {
   id: number;
@@ -30,7 +26,8 @@ export interface WasteSubmission {
 
 export interface AppUser {
   id: string;
-  wallet_address: string;
+  /** Blink Lightning wallet username (no "@domain" suffix) used as the login identity. */
+  blink_username: string;
   display_name: string | null;
   role: UserRole;
   status: UserStatus;

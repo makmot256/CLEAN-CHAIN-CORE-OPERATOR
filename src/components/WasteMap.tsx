@@ -2,9 +2,8 @@ import React from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L, { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient'; // adjust path if different
-
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient"; // adjust path if different
 
 type MarkerData = {
   id: number;
@@ -15,8 +14,6 @@ type MarkerData = {
 };
 
 import { useMapEvents } from "react-leaflet";
-
-
 
 /*const SetMapCenter = ({ center }: { center: [number, number] }) => {
   const map = useMap();
@@ -32,15 +29,22 @@ import { useMapEvents } from "react-leaflet";
 
 };*/
 
-
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
-  iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
-  shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
+  iconRetinaUrl: new URL(
+    "leaflet/dist/images/marker-icon-2x.png",
+    import.meta.url,
+  ).href,
+  iconUrl: new URL("leaflet/dist/images/marker-icon.png", import.meta.url).href,
+  shadowUrl: new URL("leaflet/dist/images/marker-shadow.png", import.meta.url)
+    .href,
 });
 ///start
-const MapClickHandler = ({ onClick }: { onClick: (latlng: [number, number]) => void }) => {
+const MapClickHandler = ({
+  onClick,
+}: {
+  onClick: (latlng: [number, number]) => void;
+}) => {
   useMapEvents({
     click(e) {
       const coords: [number, number] = [e.latlng.lat, e.latlng.lng];
@@ -50,15 +54,17 @@ const MapClickHandler = ({ onClick }: { onClick: (latlng: [number, number]) => v
   return null;
 };
 
-
 const WasteMap = () => {
   const [markers, setMarkers] = useState<MarkerData[]>([]);
+  // Scroll-to-zoom is only armed once the user deliberately interacts with the
+  // map, so scrolling the page over it never hijacks the wheel and shifts the map.
+  const [scrollZoomEnabled, setScrollZoomEnabled] = useState(false);
 
   useEffect(() => {
     const fetchMarkers = async () => {
-      const { data, error } = await supabase.from('waste_table').select('*');
+      const { data, error } = await supabase.from("waste_table").select("*");
       if (error) {
-        console.error('Error fetching markers:', error.message);
+        console.error("Error fetching markers:", error.message);
       } else {
         setMarkers(data);
       }
@@ -75,13 +81,15 @@ const WasteMap = () => {
   }
 
   return (
-    <div className="w-full border" style={{ height: '500px' }}>
-
-
+    <div
+      className="relative h-full w-full"
+      onMouseEnter={() => setScrollZoomEnabled(true)}
+      onMouseLeave={() => setScrollZoomEnabled(false)}
+    >
       <MapContainer
         center={center}
         zoom={13}
-        scrollWheelZoom
+        scrollWheelZoom={scrollZoomEnabled}
         style={{ height: "100%", width: "100%" }}
         className="h-full w-full"
       >
@@ -97,9 +105,13 @@ const WasteMap = () => {
             </Popup>
           </Marker>
         ))}
-
       </MapContainer>
 
+      {!scrollZoomEnabled && (
+        <div className="pointer-events-none absolute bottom-3 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-gray-900/70 px-3 py-1 text-xs text-white">
+          Hover the map, then scroll to zoom
+        </div>
+      )}
     </div>
   );
 };
