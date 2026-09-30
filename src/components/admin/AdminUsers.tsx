@@ -48,10 +48,12 @@ import { supabase } from "@/lib/supabaseClient";
 import { normalizeAddress, shortAddress } from "@/lib/admin";
 import { isValidBlinkUsernameFormat } from "@/lib/blink";
 import type { AppUser, UserRole, UserStatus } from "@/lib/types";
+import type { Permission } from "@/lib/permissions";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
 interface AdminUsersProps {
   users: AppUser[];
+  can?: (permission: Permission) => boolean;
   onChanged: () => Promise<void> | void;
 }
 
@@ -63,8 +65,9 @@ const EMPTY_FORM = {
   notes: "",
 };
 
-const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
+const AdminUsers = ({ users, can = () => true, onChanged }: AdminUsersProps) => {
   const { toast } = useToast();
+  const canManage = can("admin:manage_users");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<AppUser | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -165,6 +168,7 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
           </div>
           <Button
             onClick={openCreate}
+            disabled={!canManage}
             className="bg-green-700 hover:bg-green-800"
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -235,6 +239,7 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
                       <Button
                         size="icon"
                         variant="outline"
+                        disabled={!canManage}
                         onClick={() => openEdit(user)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -242,6 +247,7 @@ const AdminUsers = ({ users, onChanged }: AdminUsersProps) => {
                       <Button
                         size="icon"
                         variant="outline"
+                        disabled={!canManage}
                         onClick={() => setDeleting(user)}
                       >
                         <Trash2 className="h-4 w-4 text-red-600" />

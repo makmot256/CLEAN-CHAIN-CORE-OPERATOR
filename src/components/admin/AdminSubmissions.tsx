@@ -48,6 +48,7 @@ import {
   shortAddress,
 } from "@/lib/admin";
 import { approveSubmission } from "@/lib/blink";
+import type { Permission } from "@/lib/permissions";
 import type { WasteSubmission } from "@/lib/types";
 import {
   AlertTriangle,
@@ -61,6 +62,7 @@ import {
 interface AdminSubmissionsProps {
   submissions: WasteSubmission[];
   adminWallet: string;
+  can?: (permission: Permission) => boolean;
   onChanged: () => Promise<void> | void;
 }
 
@@ -72,9 +74,12 @@ const isPending = (s: WasteSubmission) =>
 const AdminSubmissions = ({
   submissions,
   adminWallet,
+  can = () => true,
   onChanged,
 }: AdminSubmissionsProps) => {
   const { toast } = useToast();
+  const canReview = can("admin:review_submissions");
+  const canDelete = can("admin:delete_submission");
   const [filter, setFilter] = useState<Filter>("pending");
   const [selected, setSelected] = useState<WasteSubmission | null>(null);
   const [isDuplicate, setIsDuplicate] = useState(false);
@@ -350,13 +355,15 @@ const AdminSubmissions = ({
                         >
                           Review
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => setDeleteTarget(row)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
+                        {canDelete && (
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => setDeleteTarget(row)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -528,38 +535,44 @@ const AdminSubmissions = ({
             >
               Close
             </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => selected && setDeleteTarget(selected)}
-              disabled={busy}
-              className="mr-auto"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleReject}
-              disabled={busy}
-            >
-              <XCircle className="mr-2 h-4 w-4" />
-              {busy ? "Saving..." : "Reject"}
-            </Button>
-            <Button
-              type="button"
-              className="bg-green-700 hover:bg-green-800"
-              onClick={handleApprove}
-              disabled={busy}
-            >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              {busy
-                ? "Saving..."
-                : grantAllowed
-                  ? "Accept & grant sats"
-                  : "Accept"}
-            </Button>
+            {canDelete && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => selected && setDeleteTarget(selected)}
+                disabled={busy}
+                className="mr-auto"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            )}
+            {canReview && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleReject}
+                disabled={busy}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                {busy ? "Saving..." : "Reject"}
+              </Button>
+            )}
+            {canReview && (
+              <Button
+                type="button"
+                className="bg-green-700 hover:bg-green-800"
+                onClick={handleApprove}
+                disabled={busy}
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                {busy
+                  ? "Saving..."
+                  : grantAllowed
+                    ? "Accept & grant sats"
+                    : "Accept"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

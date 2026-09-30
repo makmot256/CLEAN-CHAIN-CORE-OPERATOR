@@ -37,6 +37,7 @@ import HeroCanvas from "@/components/three/HeroCanvas";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { useBlinkAuth } from "@/hooks/useBlinkAuth";
+import { useAppRole } from "@/hooks/useAppRole";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
 import { upsertConnectedUser } from "@/lib/users";
@@ -130,6 +131,7 @@ const Index = () => {
   const [usernameInput, setUsernameInput] = useState("");
 
   const { account, login, logout, isLoggingIn } = useBlinkAuth();
+  const { status: accountStatus } = useAppRole(account);
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
   const heroRef = useRef<HTMLDivElement>(null);
@@ -218,6 +220,15 @@ const Index = () => {
       return;
     }
 
+    if (accountStatus === "suspended") {
+      toast({
+        title: "Account suspended",
+        description: "This Blink account has been suspended. Contact an admin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setUserType(role);
     setActiveView("dashboard");
     upsertConnectedUser(account, role).catch(() => undefined);
@@ -237,6 +248,28 @@ const Index = () => {
   const scrollToSection = (href: string) => {
     document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
   };
+
+  // Suspended accounts are blocked app-wide, regardless of which dashboard
+  // they were last using.
+  if (account && accountStatus === "suspended") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white px-4 text-center dark:bg-gray-950">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+          <Shield className="h-7 w-7 text-red-600 dark:text-red-400" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          Account suspended
+        </h1>
+        <p className="max-w-sm text-sm text-gray-500 dark:text-gray-400">
+          This Blink account has been suspended by an administrator. Contact
+          support if you believe this is a mistake.
+        </p>
+        <Button variant="outline" onClick={handleDisconnect}>
+          Log out
+        </Button>
+      </div>
+    );
+  }
 
   // If dashboard view and userType is 'user', render UserDashboard
   if (activeView === "dashboard" && userType === "user" && account) {

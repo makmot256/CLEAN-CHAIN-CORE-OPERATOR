@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Moon,
   Recycle,
+  ShieldCheck,
   Shield,
   Sun,
   Wallet,
@@ -17,11 +18,13 @@ import { shortAddress } from "@/lib/admin";
 import { isMissingRelationError } from "@/lib/adminSetup";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAppRole } from "@/hooks/useAppRole";
 import AdminOverview from "./AdminOverview";
 import AdminSubmissions from "./AdminSubmissions";
 import AdminUsers from "./AdminUsers";
 import AdminWallets from "./AdminWallets";
 import AdminSetupBanner from "./AdminSetupBanner";
+import AdminRoleMatrix from "./AdminRoleMatrix";
 
 interface AdminDashboardProps {
   account: string;
@@ -31,6 +34,7 @@ interface AdminDashboardProps {
 const AdminDashboard = ({ account, onDisconnect }: AdminDashboardProps) => {
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
+  const { can, refresh: refreshRole } = useAppRole(account);
   const [submissions, setSubmissions] = useState<WasteSubmission[]>([]);
   const [users, setUsers] = useState<AppUser[]>([]);
   const [wallets, setWallets] = useState<UserWallet[]>([]);
@@ -134,7 +138,7 @@ const AdminDashboard = ({ account, onDisconnect }: AdminDashboardProps) => {
           </p>
         ) : (
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 gap-1 rounded-xl border border-green-100 bg-white p-1 shadow-sm dark:border-green-900/30 dark:bg-gray-900 md:grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2 gap-1 rounded-xl border border-green-100 bg-white p-1 shadow-sm dark:border-green-900/30 dark:bg-gray-900 md:grid-cols-5">
               <TabsTrigger value="overview" className={tabTriggerClass}>
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 Analytics
@@ -149,6 +153,10 @@ const AdminDashboard = ({ account, onDisconnect }: AdminDashboardProps) => {
                 <Wallet className="mr-2 h-4 w-4" />
                 Wallets
               </TabsTrigger>
+              <TabsTrigger value="roles" className={tabTriggerClass}>
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Roles
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -158,13 +166,18 @@ const AdminDashboard = ({ account, onDisconnect }: AdminDashboardProps) => {
               <AdminSubmissions
                 submissions={submissions}
                 adminWallet={account}
+                can={can}
                 onChanged={() => load({ silent: true })}
               />
             </TabsContent>
             <TabsContent value="users">
               <AdminUsers
                 users={users}
-                onChanged={() => load({ silent: true })}
+                can={can}
+                onChanged={() => {
+                  load({ silent: true });
+                  refreshRole();
+                }}
               />
             </TabsContent>
             <TabsContent value="wallets">
@@ -173,6 +186,9 @@ const AdminDashboard = ({ account, onDisconnect }: AdminDashboardProps) => {
                 submissions={submissions}
                 wallets={wallets}
               />
+            </TabsContent>
+            <TabsContent value="roles">
+              <AdminRoleMatrix />
             </TabsContent>
           </Tabs>
         )}
