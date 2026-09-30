@@ -65,7 +65,11 @@ const EMPTY_FORM = {
   notes: "",
 };
 
-const AdminUsers = ({ users, can = () => true, onChanged }: AdminUsersProps) => {
+const AdminUsers = ({
+  users,
+  can = () => true,
+  onChanged,
+}: AdminUsersProps) => {
   const { toast } = useToast();
   const canManage = can("admin:manage_users");
   const [open, setOpen] = useState(false);
