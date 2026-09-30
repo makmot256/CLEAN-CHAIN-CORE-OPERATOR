@@ -82,14 +82,14 @@ const AdminDashboard = ({ account, onDisconnect }: AdminDashboardProps) => {
   }, [load]);
 
   const tabTriggerClass =
-    "rounded-lg text-gray-600 transition-colors data-[state=active]:bg-green-700 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-gray-300 dark:data-[state=active]:bg-green-600";
+    "whitespace-normal px-2 py-2 text-xs rounded-lg text-gray-600 transition-colors data-[state=active]:bg-green-700 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-gray-300 dark:data-[state=active]:bg-green-600 sm:text-sm";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-emerald-50 dark:from-gray-950 dark:via-green-950/10 dark:to-gray-900">
       <header className="sticky top-0 z-40 border-b border-green-200 bg-white/90 backdrop-blur dark:border-green-900/40 dark:bg-gray-950/90">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
+        <div className="container mx-auto flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-700 to-emerald-600 text-white">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-green-700 to-emerald-600 text-white">
               <Shield className="h-5 w-5" />
             </div>
             <div>
@@ -101,7 +101,7 @@ const AdminDashboard = ({ account, onDisconnect }: AdminDashboardProps) => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="hidden font-mono text-xs text-gray-600 dark:text-gray-400 sm:inline">
               {shortAddress(account)}
             </span>
@@ -138,7 +138,7 @@ const AdminDashboard = ({ account, onDisconnect }: AdminDashboardProps) => {
           </p>
         ) : (
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 gap-1 rounded-xl border border-green-100 bg-white p-1 shadow-sm dark:border-green-900/30 dark:bg-gray-900 md:grid-cols-5">
+            <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-xl border border-green-100 bg-white p-1 shadow-sm dark:border-green-900/30 dark:bg-gray-900 sm:h-10 md:grid-cols-5">
               <TabsTrigger value="overview" className={tabTriggerClass}>
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 Analytics

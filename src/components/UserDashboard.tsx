@@ -300,21 +300,21 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
       {/* Header */}
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-green-200 dark:border-gray-800 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={onBack} className="p-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Button variant="ghost" onClick={onBack} className="shrink-0 p-2">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-green-700 dark:text-green-400">
+                <h1 className="text-xl font-bold text-green-700 dark:text-green-400 sm:text-2xl">
                   User Dashboard
                 </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-xs text-gray-600 dark:text-gray-400 sm:text-sm">
                   Plastic Waste Collection Hub
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
               <Button
                 variant="ghost"
                 size="icon"
@@ -344,11 +344,31 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="submit-waste" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
-            <TabsTrigger value="submit-waste">Submit Waste</TabsTrigger>
-            <TabsTrigger value="my-submissions">My Submissions</TabsTrigger>
-            <TabsTrigger value="education">Education</TabsTrigger>
-            <TabsTrigger value="chatbot">Support</TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sm:h-10 sm:grid-cols-4">
+            <TabsTrigger
+              value="submit-waste"
+              className="whitespace-normal px-2 py-2 text-xs sm:text-sm"
+            >
+              Submit Waste
+            </TabsTrigger>
+            <TabsTrigger
+              value="my-submissions"
+              className="whitespace-normal px-2 py-2 text-xs sm:text-sm"
+            >
+              My Submissions
+            </TabsTrigger>
+            <TabsTrigger
+              value="education"
+              className="whitespace-normal px-2 py-2 text-xs sm:text-sm"
+            >
+              Education
+            </TabsTrigger>
+            <TabsTrigger
+              value="chatbot"
+              className="whitespace-normal px-2 py-2 text-xs sm:text-sm"
+            >
+              Support
+            </TabsTrigger>
           </TabsList>
 
           {/* Submit Waste Tab */}

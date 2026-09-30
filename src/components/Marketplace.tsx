@@ -82,12 +82,13 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
         title: "🎉 Redeemed!",
         description: `You received approximately ${estimatedEth} ETH for ${ppenAmount} PPEN.`,
       });
-      
+
       setPpenAmount("");
       setEstimatedEth("");
     } catch (err) {
       console.error("Redemption error:", err);
-      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      const errorMessage =
+        err instanceof Error ? err.message : "Unknown error occurred";
       toast({
         title: "❌ Redemption Failed",
         description: `There was an issue processing your redemption: ${errorMessage}`,
@@ -220,21 +221,26 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
       {/* Header */}
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-emerald-200 dark:border-gray-800 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={onBack} className="p-2" title="Back">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Button
+                variant="ghost"
+                onClick={onBack}
+                className="shrink-0 p-2"
+                title="Back"
+              >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                <h1 className="text-xl font-bold text-emerald-700 dark:text-emerald-400 sm:text-2xl">
                   PPEN Marketplace
                 </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-xs text-gray-600 dark:text-gray-400 sm:text-sm">
                   Redeem tokens for eco-friendly products & crypto
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
               <Button
                 variant="ghost"
                 size="icon"
@@ -247,7 +253,7 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
                   <Sun className="h-5 w-5" />
                 )}
               </Button>
-              <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-4 py-2 text-lg">
+              <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-4 py-2 text-base sm:text-lg">
                 <Coins className="w-4 h-4 mr-2" />
                 247.3 PPEN
               </Badge>
@@ -264,9 +270,19 @@ const Marketplace = ({ onBack }: MarketplaceProps) => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
-            <TabsTrigger value="products">Biodegradable Products</TabsTrigger>
-            <TabsTrigger value="crypto">Crypto Exchange</TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sm:h-10">
+            <TabsTrigger
+              value="products"
+              className="whitespace-normal px-2 py-2 text-xs sm:text-sm"
+            >
+              Biodegradable Products
+            </TabsTrigger>
+            <TabsTrigger
+              value="crypto"
+              className="whitespace-normal px-2 py-2 text-xs sm:text-sm"
+            >
+              Crypto Exchange
+            </TabsTrigger>
           </TabsList>
 
           {/* Products Tab */}
