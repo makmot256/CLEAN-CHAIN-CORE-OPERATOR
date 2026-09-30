@@ -12,7 +12,6 @@ import {
   MapPin,
   Users,
   Recycle,
-  Coins,
   Leaf,
   ArrowRight,
   Globe,
@@ -24,8 +23,12 @@ import {
   Send,
   Sparkles,
   ChevronDown,
+  Shield,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom";
 import UserDashboard from "@/components/UserDashboard";
 import WasteTrackerDashboard from "@/components/WasteTrackerDashboard";
 import LogisticsOrgDashboard from "@/components/LogisticsOrgDashboard";
@@ -33,8 +36,11 @@ import Marketplace from "@/components/Marketplace";
 import HeroCanvas from "@/components/three/HeroCanvas";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
-import { useWallet } from "@/hooks/useWallet";
+import { useBlinkAuth } from "@/hooks/useBlinkAuth";
+import { useAppRole } from "@/hooks/useAppRole";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/contexts/ThemeContext";
+import { upsertConnectedUser } from "@/lib/users";
 import gsap from "gsap";
 
 import "leaflet/dist/leaflet.css";
@@ -59,8 +65,8 @@ const ROLE_CARDS = [
     bullets: [
       "Submit collected waste with GPS data",
       "Upload photos and weight details",
-      "Earn PPEN tokens for contributions",
-      "Redeem tokens for crypto or goods",
+      "Earn Plastic Pennies (sats) for contributions",
+      "Sats are paid straight to your Blink wallet",
       "Access educational content",
     ],
     enterLabel: "Enter as User",
@@ -79,7 +85,7 @@ const ROLE_CARDS = [
       "Accept pickup jobs from users",
       "Verify and sign transactions",
       "Optimize collection routes",
-      "Earn PPEN tokens for services",
+      "Earn Plastic Pennies (sats) for services",
     ],
     enterLabel: "Enter as Tracker",
   },
@@ -107,7 +113,12 @@ const STATS = [
   { value: 50000, suffix: "+", label: "Plastic Items Collected" },
   { value: 1200, suffix: "+", label: "Active Users" },
   { value: 750, suffix: "+", label: "Waste Trackers" },
-  { value: 25000, prefix: "₽ ", label: "PPEN Tokens Earned" },
+  {
+    value: 25000,
+    prefix: "",
+    suffix: " sats",
+    label: "Plastic Pennies Earned",
+  },
 ];
 
 const Index = () => {
@@ -117,10 +128,12 @@ const Index = () => {
   const [userType, setUserType] = useState<
     "user" | "tracker" | "logistics" | null
   >(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
 
-  const { connect, disconnect, account } = useWallet();
+  const { account, login, logout, isLoggingIn } = useBlinkAuth();
+  const { status: accountStatus } = useAppRole(account);
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
   const heroRef = useRef<HTMLDivElement>(null);
 
   // Redirect effect: when account becomes available and userType is set, navigate or set activeView
@@ -134,6 +147,11 @@ const Index = () => {
       setUserType(null);
     }
   }, [account, userType]);
+
+  useEffect(() => {
+    if (!account) return;
+    upsertConnectedUser(account).catch(() => undefined);
+  }, [account]);
 
   // Hero entrance animation
   useEffect(() => {
@@ -174,43 +192,50 @@ const Index = () => {
     return () => ctx.revert();
   }, [activeView]);
 
-  const handleConnectWallet = async () => {
-    try {
-      setIsConnecting(true);
-      await connect();
+  const handleLoginWithBlink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = await login(usernameInput);
+    if (result.ok) {
+      setUsernameInput("");
       toast({
-        title: "Wallet connected",
+        title: "Logged in with Blink",
         description:
           "You can now access Users, Waste Trackers, and Logistics Organizations.",
       });
-    } catch (err) {
-      console.error("User rejected connection or error", err);
+    } else {
       toast({
-        title: "Wallet connection failed",
-        description: "Please approve the MetaMask prompt and try again.",
+        title: "Login failed",
+        description: result.error || "Could not verify that Blink username.",
         variant: "destructive",
       });
-    } finally {
-      setIsConnecting(false);
     }
   };
 
   const handleRoleSelect = (role: "user" | "tracker" | "logistics") => {
     if (!account) {
       toast({
-        title: "Connect wallet first",
-        description:
-          "Use the Connect Wallet button in the top-right to continue.",
+        title: "Log in first",
+        description: "Enter your Blink username in the top-right to continue.",
+      });
+      return;
+    }
+
+    if (accountStatus === "suspended") {
+      toast({
+        title: "Account suspended",
+        description: "This Blink account has been suspended. Contact an admin.",
+        variant: "destructive",
       });
       return;
     }
 
     setUserType(role);
     setActiveView("dashboard");
+    upsertConnectedUser(account, role).catch(() => undefined);
   };
 
   const handleDisconnect = () => {
-    disconnect();
+    logout();
     // useEffect will reset activeView and userType
   };
 
@@ -223,6 +248,28 @@ const Index = () => {
   const scrollToSection = (href: string) => {
     document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
   };
+
+  // Suspended accounts are blocked app-wide, regardless of which dashboard
+  // they were last using.
+  if (account && accountStatus === "suspended") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white px-4 text-center dark:bg-gray-950">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+          <Shield className="h-7 w-7 text-red-600 dark:text-red-400" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          Account suspended
+        </h1>
+        <p className="max-w-sm text-sm text-gray-500 dark:text-gray-400">
+          This Blink account has been suspended by an administrator. Contact
+          support if you believe this is a mistake.
+        </p>
+        <Button variant="outline" onClick={handleDisconnect}>
+          Log out
+        </Button>
+      </div>
+    );
+  }
 
   // If dashboard view and userType is 'user', render UserDashboard
   if (activeView === "dashboard" && userType === "user" && account) {
@@ -255,20 +302,20 @@ const Index = () => {
 
   // Home view: show role selection
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
       {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-green-100 bg-white/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-green-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <a href="#home" className="flex items-center space-x-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-600 to-emerald-600 shadow-lg shadow-green-600/20">
               <Recycle className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-tight text-gray-900 sm:text-xl">
+              <h1 className="text-lg font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl">
                 CleanChain{" "}
                 <span className="text-gradient-brand">Core Operator</span>
               </h1>
-              <p className="hidden text-xs text-gray-500 sm:block">
+              <p className="hidden text-xs text-gray-500 dark:text-gray-400 sm:block">
                 Sustainable Waste Management Ecosystem
               </p>
             </div>
@@ -279,45 +326,78 @@ const Index = () => {
               <button
                 key={link.href}
                 onClick={() => scrollToSection(link.href)}
-                className="text-sm font-medium text-gray-600 transition-colors hover:text-green-700"
+                className="text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors hover:text-green-700 dark:hover:text-green-400"
               >
                 {link.label}
               </button>
             ))}
+            <Link
+              to="/admin"
+              className="inline-flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors hover:text-green-700 dark:hover:text-green-400"
+            >
+              <Shield className="h-3.5 w-3.5" />
+              Admin
+            </Link>
           </nav>
 
           <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="rounded-full"
+            >
+              {theme === "light" ? (
+                <Moon className="h-5 w-5" />
+              ) : (
+                <Sun className="h-5 w-5" />
+              )}
+            </Button>
+            <Link
+              to="/admin"
+              className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 dark:text-gray-400 hover:bg-green-50 dark:hover:bg-gray-800 hover:text-green-700 dark:hover:text-green-400 md:hidden"
+              aria-label="Admin hub"
+            >
+              <Shield className="h-5 w-5" />
+            </Link>
             {account ? (
               <>
                 <Badge
                   variant="outline"
-                  className="hidden border-green-300 px-3 py-1 text-xs text-green-800 sm:inline-flex"
+                  className="hidden border-green-300 dark:border-green-700 px-3 py-1 text-xs text-green-800 dark:text-green-400 sm:inline-flex"
                 >
-                  {account.slice(0, 6)}...{account.slice(-4)}
+                  @{account}
                 </Badge>
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={handleDisconnect}
                 >
-                  Disconnect
+                  Log out
                 </Button>
               </>
             ) : (
-              <>
-                <Badge className="hidden bg-green-100 text-green-700 sm:inline-flex">
-                  <Coins className="mr-1 h-3 w-3" />
-                  PPEN Token
-                </Badge>
+              <form
+                onSubmit={handleLoginWithBlink}
+                className="flex items-center gap-2"
+              >
+                <Input
+                  value={usernameInput}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                  placeholder="username or you@blink.sv"
+                  className="h-9 w-32 sm:w-48"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                />
                 <Button
+                  type="submit"
                   size="sm"
-                  onClick={handleConnectWallet}
-                  disabled={isConnecting}
-                  className="btn-brand border-0"
+                  disabled={isLoggingIn}
+                  className="btn-brand border-0 whitespace-nowrap"
                 >
-                  {isConnecting ? "Connecting..." : "Connect Wallet"}
+                  {isLoggingIn ? "Checking…" : "Login with Blink"}
                 </Button>
-              </>
+              </form>
             )}
           </div>
         </div>
@@ -327,7 +407,7 @@ const Index = () => {
       <section
         id="home"
         ref={heroRef}
-        className="relative isolate overflow-hidden bg-gradient-to-b from-green-50/70 via-white to-white py-24 px-4 sm:py-28"
+        className="relative isolate overflow-hidden bg-gradient-to-b from-green-50/70 dark:from-gray-900 via-white dark:via-gray-950 to-white dark:to-gray-950 py-24 px-4 sm:py-28"
       >
         <HeroCanvas />
         <div className="pointer-events-none absolute inset-0 grid-fade-mask bg-[linear-gradient(to_right,rgba(22,163,74,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(22,163,74,0.06)_1px,transparent_1px)] bg-[size:56px_56px]" />
@@ -336,7 +416,7 @@ const Index = () => {
           <div className="mx-auto max-w-4xl">
             <div
               data-hero-badge
-              className="mb-6 inline-flex items-center gap-2 rounded-full border border-green-200 bg-white/80 px-4 py-1.5 text-sm font-medium text-green-700 shadow-sm backdrop-blur"
+              className="mb-6 inline-flex items-center gap-2 rounded-full border border-green-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 px-4 py-1.5 text-sm font-medium text-green-700 dark:text-green-400 shadow-sm backdrop-blur"
             >
               <Sparkles className="h-4 w-4" />
               Blockchain-powered circular economy
@@ -344,7 +424,7 @@ const Index = () => {
 
             <h2
               data-hero-title
-              className="mb-6 text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl"
+              className="mb-6 text-4xl font-bold leading-tight dark:text-gray-100 sm:text-5xl lg:text-6xl"
             >
               Turn Plastic Waste Into{" "}
               <span className="text-gradient-brand">Digital Wealth</span>
@@ -352,11 +432,12 @@ const Index = () => {
 
             <p
               data-hero-sub
-              className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-600"
+              className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-600 dark:text-gray-300"
             >
-              Join the revolutionary blockchain-powered ecosystem where plastic
-              waste becomes PLASTIC PENNY (PPEN) tokens, creating economic
-              opportunities while cleaning our environment.
+              Join the revolutionary Bitcoin Lightning-powered ecosystem where
+              plastic waste becomes PLASTIC PENNY rewards — paid out in real
+              sats to your Blink wallet — creating economic opportunities while
+              cleaning our environment.
             </p>
 
             <div className="mb-14 flex flex-wrap items-center justify-center gap-4">
@@ -383,21 +464,21 @@ const Index = () => {
             <div className="flex flex-wrap justify-center gap-3">
               <Badge
                 data-hero-trust
-                className="bg-green-100 px-4 py-2 text-sm text-green-700"
+                className="bg-green-100 dark:bg-green-900/30 px-4 py-2 text-sm text-green-700 dark:text-green-400"
               >
                 <Globe className="mr-2 h-4 w-4" />
                 Blockchain Verified
               </Badge>
               <Badge
                 data-hero-trust
-                className="bg-emerald-100 px-4 py-2 text-sm text-emerald-700"
+                className="bg-emerald-100 dark:bg-emerald-900/30 px-4 py-2 text-sm text-emerald-700 dark:text-emerald-400"
               >
                 <TrendingUp className="mr-2 h-4 w-4" />
                 Economic Impact
               </Badge>
               <Badge
                 data-hero-trust
-                className="bg-teal-100 px-4 py-2 text-sm text-teal-700"
+                className="bg-teal-100 dark:bg-teal-900/30 px-4 py-2 text-sm text-teal-700 dark:text-teal-400"
               >
                 <Leaf className="mr-2 h-4 w-4" />
                 Environmental Solution
@@ -408,7 +489,7 @@ const Index = () => {
           <button
             onClick={() => scrollToSection("#roles")}
             aria-label="Scroll to role selection"
-            className="mx-auto mt-16 flex h-10 w-10 animate-float-slow items-center justify-center rounded-full border border-green-200 bg-white/70 text-green-600 shadow-sm backdrop-blur transition hover:bg-green-50"
+            className="mx-auto mt-16 flex h-10 w-10 animate-float-slow items-center justify-center rounded-full border border-green-200 dark:border-gray-700 bg-white/70 dark:bg-gray-800/70 text-green-600 dark:text-green-400 shadow-sm backdrop-blur transition hover:bg-green-50 dark:hover:bg-gray-700"
           >
             <ChevronDown className="h-5 w-5" />
           </button>
@@ -416,16 +497,16 @@ const Index = () => {
       </section>
 
       {/* Role Selection */}
-      <section id="roles" className="px-4 pb-24 pt-16">
+      <section id="roles" className="px-4 pb-24 pt-16 dark:bg-gray-950">
         <div className="container mx-auto">
           <ScrollReveal className="mx-auto mb-4 max-w-2xl text-center">
-            <h3 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+            <h3 className="text-3xl font-bold text-gray-900 dark:text-gray-100 sm:text-4xl">
               Choose Your Role in the{" "}
               <span className="text-gradient-brand">CleanChain</span> Ecosystem
             </h3>
             {!account && (
-              <p className="mt-4 text-sm text-gray-500">
-                Connect your MetaMask wallet from the top-right to unlock all
+              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+                Log in with your Blink username from the top-right to unlock all
                 categories.
               </p>
             )}
@@ -440,7 +521,7 @@ const Index = () => {
               return (
                 <Card
                   key={role.id}
-                  className={`group cursor-pointer border ${role.borderIdle} ${role.borderHover} transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-green-900/10`}
+                  className={`group cursor-pointer border ${role.borderIdle} dark:border-gray-800 dark:bg-gray-900/50 ${role.borderHover} transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-green-900/10`}
                 >
                   <CardHeader className="pb-4 text-center">
                     <div
@@ -448,13 +529,17 @@ const Index = () => {
                     >
                       <Icon className="h-8 w-8 text-white" />
                     </div>
-                    <CardTitle className={`text-2xl ${role.titleColor}`}>
+                    <CardTitle
+                      className={`text-2xl ${role.titleColor} dark:text-green-400`}
+                    >
                       {role.title}
                     </CardTitle>
-                    <CardDescription>{role.subtitle}</CardDescription>
+                    <CardDescription className="dark:text-gray-400">
+                      {role.subtitle}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <ul className="space-y-2 text-sm text-gray-600">
+                    <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                       {role.bullets.map((bullet) => (
                         <li key={bullet}>• {bullet}</li>
                       ))}
@@ -464,7 +549,7 @@ const Index = () => {
                       disabled={!account}
                       className={`w-full bg-gradient-to-r ${role.gradient} border-0 text-white shadow-md transition-all hover:shadow-lg`}
                     >
-                      {account ? role.enterLabel : "Connect Wallet First"}
+                      {account ? role.enterLabel : "Login with Blink First"}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardContent>
@@ -478,7 +563,7 @@ const Index = () => {
       {/* Stats Section */}
       <section
         id="stats"
-        className="border-y border-green-100 bg-gradient-to-b from-green-50/60 to-white px-4 py-16"
+        className="border-y border-green-100 dark:border-gray-800 bg-gradient-to-b from-green-50/60 dark:from-gray-900 to-white dark:to-gray-950 px-4 py-16"
       >
         <div className="container mx-auto">
           <ScrollReveal
@@ -486,14 +571,19 @@ const Index = () => {
             className="grid gap-8 text-center md:grid-cols-4"
           >
             {STATS.map((stat) => (
-              <div key={stat.label} className="glass-panel rounded-2xl p-6">
+              <div
+                key={stat.label}
+                className="glass-panel dark:bg-gray-900/50 dark:border-gray-800 rounded-2xl p-6"
+              >
                 <AnimatedCounter
                   value={stat.value}
                   prefix={stat.prefix}
                   suffix={stat.suffix}
                   className="text-gradient-brand text-3xl font-bold"
                 />
-                <div className="mt-2 text-gray-600">{stat.label}</div>
+                <div className="mt-2 text-gray-600 dark:text-gray-300">
+                  {stat.label}
+                </div>
               </div>
             ))}
           </ScrollReveal>
@@ -638,6 +728,12 @@ const Index = () => {
                 <a href="#" className="transition-colors hover:text-green-400">
                   Cookie Policy
                 </a>
+                <Link
+                  to="/admin"
+                  className="transition-colors hover:text-green-400"
+                >
+                  Admin Hub
+                </Link>
               </div>
             </div>
           </div>

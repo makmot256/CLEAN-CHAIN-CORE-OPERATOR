@@ -46,16 +46,17 @@ import {
   Coins,
   ArrowLeft,
   Users,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ethers, BrowserProvider, parseUnits } from "ethers";
+import { useTheme } from "@/contexts/ThemeContext";
 
 import WasteMap from "./WasteMap";
 import { supabase } from "@/lib/supabaseClient";
-import { CONTRACTS, TOKEN_CONFIG } from "@/lib/config";
-import { PlasticPennyABI } from "@/lib/abi/PlasticPenny";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
-import { useWallet } from "@/hooks/useWallet";
+import { useBlinkAuth } from "@/hooks/useBlinkAuth";
+import { rewardForWeight } from "@/lib/admin";
 
 interface WasteTrackerDashboardProps {
   onBack: () => void;
@@ -71,7 +72,8 @@ const WasteTrackerDashboard = ({
   const [submissions, setSubmissions] = useState<WasteSubmission[]>([]);
   const mapRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { account } = useWallet();
+  const { theme, toggleTheme } = useTheme();
+  const { account } = useBlinkAuth();
   const { balance: tokenBalance, isLoading: balanceLoading } =
     useTokenBalance(account);
 
@@ -109,7 +111,7 @@ const WasteTrackerDashboard = ({
           weight: job.weight,
           location: job.description ?? "Unknown",
           user: job.submitted_by,
-          reward: `${(job.weight * 0.1).toFixed(1)} PPEN`,
+          reward: `${rewardForWeight(job.weight)} sats`,
           completedAt: new Date(
             job.updated_at || job.created_at,
           ).toLocaleString(), // if timestamp exists
@@ -130,7 +132,7 @@ const WasteTrackerDashboard = ({
       location: "Downtown Park",
       user: "Alice Johnson",
       distance: "0.8km",
-      reward: "3.2 PPEN",
+      reward: "3.2 sats",
       status: "pending",
     },
     {
@@ -140,7 +142,7 @@ const WasteTrackerDashboard = ({
       location: "Shopping Mall",
       user: "Bob Wilson",
       distance: "1.2km",
-      reward: "2.1 PPEN",
+      reward: "2.1 sats",
       status: "pending",
     },
     {
@@ -150,7 +152,7 @@ const WasteTrackerDashboard = ({
       location: "Beach Area",
       user: "Carol Davis",
       distance: "2.5km",
-      reward: "1.8 PPEN",
+      reward: "1.8 sats",
       status: "pending",
     },
   ];
@@ -163,7 +165,7 @@ const WasteTrackerDashboard = ({
     location: job.description ?? "Unknown",
     user: job.submitted_by,
     distance: "—",
-    reward: `${(job.weight * 1.0).toFixed(1)} PPEN`, // → use numeric weight
+    reward: `${rewardForWeight(job.weight)} sats`,
   }));
 
   //const completedJobs = [
@@ -173,120 +175,45 @@ const WasteTrackerDashboard = ({
   /////start
   // …inside WasteTrackerDashboard component
   const handleAcceptJob = async (job: WasteSubmission) => {
-    // 1️⃣ Mark job accepted in Supabase
     const { error: acceptErr } = await supabase
       .from("waste_table")
       .update({ status: "accepted" })
       .eq("id", job.id);
     if (acceptErr) {
       console.error("Error accepting job:", acceptErr);
+      toast({
+        title: "Could not accept job",
+        description: acceptErr.message,
+        variant: "destructive",
+      });
       return;
     }
 
-    // 2️⃣ Calculate tokens
-    const tokensToAward = job.weight * TOKEN_CONFIG.REWARD_RATE_PER_KG;
+    toast({
+      title: "Job accepted",
+      description:
+        "Pickup recorded. Sats are granted after an admin verifies the report is unique and at a prominent disposal site.",
+    });
 
-    // 3️⃣ Trigger on-chain transfer from user's wallet
-    try {
-      if (!window.ethereum) {
-        alert("Please connect a wallet like MetaMask");
-        return;
-      }
+    const newCompleted: CompletedJob = {
+      id: job.id,
+      type: job.waste_type,
+      weight: job.weight,
+      location: job.description ?? "Unknown",
+      user: job.submitted_by,
+      reward: "Pending admin",
+      completedAt: "just now",
+    };
 
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-
-      const provider = new BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(
-        CONTRACTS.PLASTIC_PENNY,
-        PlasticPennyABI,
-        signer,
-      );
-
-      const amount = parseUnits(tokensToAward.toString(), 18);
-      const tx = await contract.transfer(job.submitted_by, amount);
-      await tx.wait();
-      const txHash = tx.hash;
-
-      // 4️⃣ Update off-chain user_wallet balance
-      const { data: wallet, error: fetchBalErr } = await supabase
-        .from("user_wallet")
-        .select("token_balance")
-        .eq("account", job.submitted_by)
-        .maybeSingle();
-      if (fetchBalErr) {
-        console.error("Failed to fetch balance:", fetchBalErr);
-        toast({
-          title: "Database setup required",
-          description:
-            fetchBalErr.code === "PGRST205"
-              ? "Missing table: user_wallet. Create it in Supabase SQL Editor."
-              : "Could not read wallet balance from Supabase.",
-        });
-        return;
-      }
-
-      const currentBalance = wallet?.token_balance ?? 0;
-      const newBalance = currentBalance + tokensToAward;
-
-      const { error: updateBalErr } = wallet
-        ? await supabase
-            .from("user_wallet")
-            .update({ token_balance: newBalance })
-            .eq("account", job.submitted_by)
-        : await supabase.from("user_wallet").insert({
-            account: job.submitted_by,
-            token_balance: tokensToAward,
-          });
-      if (updateBalErr) {
-        console.error("Failed to update balance:", updateBalErr);
-        toast({
-          title: "Wallet update failed",
-          description: updateBalErr.message,
-        });
-        return;
-      }
-
-      // 5️⃣ Mark tokens_awarded
-      await supabase
-        .from("waste_table")
-        .update({ tokens_awarded: true })
-        .eq("id", job.id);
-
-      // 6️⃣ Toast
-      toast({
-        title: "Job Accepted!",
-        description: `Sent ${tokensToAward.toFixed(1)} PPEN (tx ${txHash})`,
-      });
-      const newCompleted: CompletedJob = {
-        id: job.id,
-        type: job.waste_type,
-        weight: job.weight,
-        location: job.description ?? "Unknown",
-        user: job.submitted_by,
-        reward: `${tokensToAward.toFixed(1)} PPEN`,
-        completedAt: "just now",
-      };
-
-      setCompletedJobs((prev) => [...prev, newCompleted]);
-
-      // Optionally remove from submissions (so it disappears from Available Jobs)
-      setSubmissions((prev) => prev.filter((j) => j.id !== job.id));
-    } catch (err) {
-      console.error("On-chain transfer failed:", err);
-      toast({
-        title: "Transfer failed",
-        description:
-          "Could not complete token transfer. Check wallet and try again.",
-      });
-    }
+    setCompletedJobs((prev) => [...prev, newCompleted]);
+    setSubmissions((prev) => prev.filter((j) => j.id !== job.id));
   };
 
   const handleCompleteJob = (jobId: number) => {
     toast({
       title: "Job Completed!",
       description:
-        "Transaction signed and verified on blockchain. PPEN tokens have been awarded.",
+        "Verified. Sats have been sent to the collector's Blink wallet.",
     });
   };
 
@@ -366,9 +293,9 @@ const WasteTrackerDashboard = ({
  }, []); */
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-emerald-200 sticky top-0 z-50">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-emerald-200 dark:border-gray-800 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -376,18 +303,30 @@ const WasteTrackerDashboard = ({
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-emerald-700">
+                <h1 className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
                   Waste Tracker Dashboard
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Collection & Verification Hub
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge className="bg-emerald-100 text-emerald-700 px-4 py-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="rounded-full"
+              >
+                {theme === "light" ? (
+                  <Moon className="h-5 w-5" />
+                ) : (
+                  <Sun className="h-5 w-5" />
+                )}
+              </Button>
+              <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-4 py-2">
                 <Coins className="w-4 h-4 mr-2" />
-                {balanceLoading ? "Loading..." : `${tokenBalance} PPEN`}
+                {balanceLoading ? "Loading..." : `${tokenBalance} sats`}
               </Badge>
               {/* <Button onClick={onMarketplace} className="bg-emerald-600 hover:bg-emerald-700">
                 Marketplace
@@ -399,7 +338,7 @@ const WasteTrackerDashboard = ({
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="map-view" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-md">
+          <TabsList className="grid w-full grid-cols-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
             <TabsTrigger value="map-view">GPS Map View</TabsTrigger>
             <TabsTrigger value="available-jobs">Available Jobs</TabsTrigger>
             <TabsTrigger value="completed-jobs">Completed Jobs</TabsTrigger>
@@ -407,9 +346,9 @@ const WasteTrackerDashboard = ({
 
           {/* Map View Tab */}
           <TabsContent value="map-view" className="space-y-6">
-            <Card className="border-emerald-200">
+            <Card className="border-emerald-200 dark:border-emerald-900/40">
               <CardHeader>
-                <CardTitle className="flex items-center text-emerald-700">
+                <CardTitle className="flex items-center text-emerald-700 dark:text-emerald-400">
                   <MapPin className="w-5 h-5 mr-2" />
                   Live Waste Collection Map
                 </CardTitle>
@@ -418,48 +357,45 @@ const WasteTrackerDashboard = ({
                   routes
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div
-                    style={{ height: "500px" }}
-                    className="rounded-lg overflow-hidden border border-emerald-200"
-                  >
-                    {/* <ErrorBoundary>
+              <CardContent className="space-y-6">
+                <div className="isolate h-[420px] w-full overflow-hidden rounded-lg border border-emerald-200 dark:border-emerald-900/40 sm:h-[500px]">
+                  {/* <ErrorBoundary>
   <WasteMap />
 </ErrorBoundary> */}
-                    <WasteMap />
-                  </div>
+                  <WasteMap />
+                </div>
 
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <Card className="bg-red-50 border-red-200">
-                      <CardContent className="p-4 text-center">
-                        <div className="text-2xl font-bold text-red-600">3</div>
-                        <div className="text-sm text-red-700">
-                          Pending Collections
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-green-50 border-green-200">
-                      <CardContent className="p-4 text-center">
-                        <div className="text-2xl font-bold text-green-600">
-                          12
-                        </div>
-                        <div className="text-sm text-green-700">
-                          Completed Today
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-teal-50 border-teal-200">
-                      <CardContent className="p-4 text-center">
-                        <div className="text-2xl font-bold text-teal-600">
-                          8.2km
-                        </div>
-                        <div className="text-sm text-teal-700">
-                          Optimal Route
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card className="bg-red-50 border-red-200 dark:border-red-900/40 dark:bg-red-950/30">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                        3
+                      </div>
+                      <div className="text-sm text-red-700 dark:text-red-300">
+                        Pending Collections
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-green-50 border-green-200 dark:border-green-900/40 dark:bg-green-950/30">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        12
+                      </div>
+                      <div className="text-sm text-green-700 dark:text-green-300">
+                        Completed Today
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-teal-50 border-teal-200 dark:border-teal-900/40 dark:bg-teal-950/30">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+                        8.2km
+                      </div>
+                      <div className="text-sm text-teal-700 dark:text-teal-300">
+                        Optimal Route
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </CardContent>
             </Card>
@@ -513,7 +449,7 @@ const WasteTrackerDashboard = ({
                           </div>
                           <div className="bg-blue-50 p-3 rounded-lg">
                             <div className="text-sm font-medium text-blue-800">
-                              Reward: {job.weight.toFixed(1)} PPEN
+                              Reward: {rewardForWeight(job.weight)} sats
                             </div>
                             <div className="text-xs text-blue-600">
                               Plus verification bonus

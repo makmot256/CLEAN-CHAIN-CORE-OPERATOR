@@ -20,24 +20,53 @@
 
 ## 📖 About The Project
 
-CleanChain Core Operator is a revolutionary blockchain-powered ecosystem that transforms plastic waste collection into economic opportunities. Users collect plastic waste, earn **PPEN (Plastic Penny)** tokens, and can redeem them for cryptocurrency or biodegradable products.
+CleanChain Core Operator is a revolutionary Bitcoin Lightning-powered ecosystem that transforms plastic waste collection into economic opportunities. Users log in with their **Blink** wallet username, collect plastic waste, and earn **Plastic Pennies — real satoshis (sats)** paid straight to their Blink Lightning wallet.
 
 ### 🎯 The Problem
+
 - Millions of tons of plastic waste pollute our environment daily
 - Informal waste collectors lack economic incentives and recognition
 - No transparent system to track and verify waste collection
 
 ### 💡 Our Solution
-- **Tokenized Rewards**: Earn PPEN tokens for every kg of plastic collected
+
+- **Sats Rewards**: Earn real Bitcoin (sats) for every kg of plastic collected, paid via [Blink](https://www.blink.sv/)
 - **GPS Verification**: Submit waste with location data for transparency
-- **Blockchain Security**: All transactions are verified on Base Sepolia
-- **Marketplace Economy**: Redeem tokens for goods or cryptocurrency
+- **Simple Login**: No browser wallet extension required — just your Blink username
+- **Marketplace Economy**: Redeem tokens for goods or educational content
+
+---
+
+## ⚡ Blink (Bitcoin Lightning) Setup
+
+This app uses [Blink](https://www.blink.sv/) as its wallet provider. Users "log in" with just their Blink username instead of connecting MetaMask, and admins approve submissions to trigger a real Lightning payout in sats.
+
+1. Create a Blink account and business/app wallet at [dashboard.blink.sv](https://dashboard.blink.sv/), and generate an API key.
+2. Note your app's BTC wallet id (the wallet sats are paid **from**).
+3. Deploy the two Supabase Edge Functions in `supabase/functions/`:
+   ```bash
+   supabase functions deploy blink-lookup-username
+   supabase functions deploy blink-approve-submission
+   ```
+4. Set these as **Supabase Edge Function secrets** (never in `.env`/the client bundle):
+   ```bash
+   supabase secrets set BLINK_API_KEY=blink_xxx
+   supabase secrets set BLINK_BTC_WALLET_ID=your-wallet-id
+   supabase secrets set BLINK_DOMAIN=blink.sv
+   supabase secrets set SATS_PER_KG=10
+   supabase secrets set ADMIN_BLINK_USERNAMES=your_admin_username
+   ```
+5. In `.env`, set the matching client-side values: `VITE_BLINK_DOMAIN`, `VITE_SATS_PER_KG`, `VITE_ADMIN_BLINK_USERNAMES`.
+6. Run `supabase/admin-setup.sql` in the Supabase SQL editor (safe to re-run) to create/migrate the `app_users` and `user_wallet` tables to use `blink_username`.
+
+**Note:** The existing on-chain marketplace/redemption features (education video purchase, PPEN↔ETH redemption) still use the legacy Base Sepolia contracts and are unaffected by this migration.
 
 ---
 
 ## ✨ Features
 
 ### 👤 For Users (Waste Collectors)
+
 - 📍 Submit collected waste with GPS coordinates
 - 📸 Upload photos as proof of collection
 - 💰 Earn PPEN tokens (0.1 PPEN per kg)
@@ -45,12 +74,14 @@ CleanChain Core Operator is a revolutionary blockchain-powered ecosystem that tr
 - 📚 Access educational content
 
 ### 🗺️ For Waste Trackers
+
 - 🗺️ View waste locations on interactive map
 - ✅ Accept and complete pickup jobs
 - 💎 Earn tokens for verification services
 - 📊 Optimize collection routes
 
 ### 🏢 For Logistics Organizations
+
 - 📈 Access analytics and insights
 - 🏪 List biodegradable products in marketplace
 - 📊 Purchase environmental data reports
@@ -60,15 +91,15 @@ CleanChain Core Operator is a revolutionary blockchain-powered ecosystem that tr
 
 ## 🛠️ Tech Stack
 
-| Category | Technologies |
-|----------|-------------|
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS |
-| **UI Components** | Shadcn/ui, Radix UI, Lucide Icons |
-| **Blockchain** | Ethers.js v6, Web3-React, MetaMask |
-| **Backend** | Supabase (PostgreSQL, Auth, Storage) |
-| **Maps** | Leaflet, React-Leaflet |
-| **Charts** | Recharts |
-| **Network** | Base Sepolia Testnet |
+| Category          | Technologies                             |
+| ----------------- | ---------------------------------------- |
+| **Frontend**      | React 18, TypeScript, Vite, Tailwind CSS |
+| **UI Components** | Shadcn/ui, Radix UI, Lucide Icons        |
+| **Blockchain**    | Ethers.js v6, Web3-React, MetaMask       |
+| **Backend**       | Supabase (PostgreSQL, Auth, Storage)     |
+| **Maps**          | Leaflet, React-Leaflet                   |
+| **Charts**        | Recharts                                 |
+| **Network**       | Base Sepolia Testnet                     |
 
 ---
 
@@ -83,30 +114,35 @@ CleanChain Core Operator is a revolutionary blockchain-powered ecosystem that tr
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/makmot256/CLEAN-CHAIN-CORE-OPERATOR.git
    cd CLEAN-CHAIN-CORE-OPERATOR
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install --legacy-peer-deps
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env
    ```
-   
+
    Edit `.env` with your Supabase credentials:
+
    ```env
    VITE_SUPABASE_URL=your_supabase_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
 4. **Set up the database**
-   
+
    Run this SQL in your Supabase SQL Editor:
+
    ```sql
    -- Waste submissions table
    CREATE TABLE waste_table (
@@ -154,7 +190,10 @@ CleanChain Core Operator is a revolutionary blockchain-powered ecosystem that tr
    CREATE POLICY "Enable all access" ON products FOR ALL USING (true) WITH CHECK (true);
    ```
 
+   Then also run `supabase/admin-setup.sql` to add the admin hub tables (`app_users`, `user_wallet`) and verification columns.
+
 5. **Start the development server**
+
    ```bash
    npm run dev
    ```
@@ -170,21 +209,21 @@ CleanChain Core Operator is a revolutionary blockchain-powered ecosystem that tr
 
 Deployed on **Base Sepolia Testnet**:
 
-| Contract | Address | Description |
-|----------|---------|-------------|
-| **PlasticPenny (PPEN)** | `0xd975232a55C083f30598EEacA02E71DB4FE04822` | ERC-20 reward token |
-| **Redemption** | `0x72abb9a7f252B755a9E1d6f2411835a3Ef167a46` | Token-to-ETH redemption |
-| **Payment Handler** | `0xdef685F9C502D055343BAC1A1d635AfDE808888b` | Payment processing |
+| Contract                | Address                                      | Description             |
+| ----------------------- | -------------------------------------------- | ----------------------- |
+| **PlasticPenny (PPEN)** | `0xd975232a55C083f30598EEacA02E71DB4FE04822` | ERC-20 reward token     |
+| **Redemption**          | `0x72abb9a7f252B755a9E1d6f2411835a3Ef167a46` | Token-to-ETH redemption |
+| **Payment Handler**     | `0xdef685F9C502D055343BAC1A1d635AfDE808888b` | Payment processing      |
 
 ### Adding Base Sepolia to MetaMask
 
-| Setting | Value |
-|---------|-------|
-| Network Name | Base Sepolia |
-| RPC URL | `https://sepolia.base.org` |
-| Chain ID | `84532` |
-| Currency Symbol | ETH |
-| Block Explorer | `https://sepolia.basescan.org` |
+| Setting         | Value                          |
+| --------------- | ------------------------------ |
+| Network Name    | Base Sepolia                   |
+| RPC URL         | `https://sepolia.base.org`     |
+| Chain ID        | `84532`                        |
+| Currency Symbol | ETH                            |
+| Block Explorer  | `https://sepolia.basescan.org` |
 
 ---
 
@@ -194,6 +233,7 @@ Deployed on **Base Sepolia Testnet**:
 clean-chain-core-operator/
 ├── src/
 │   ├── components/          # React components
+│   │   ├── admin/           # Admin hub (analytics, verification, users)
 │   │   ├── UserDashboard.tsx
 │   │   ├── WasteTrackerDashboard.tsx
 │   │   ├── LogisticsOrgDashboard.tsx
@@ -205,11 +245,15 @@ clean-chain-core-operator/
 │   │   └── useTokenBalance.ts
 │   ├── lib/                 # Utilities and config
 │   │   ├── config.ts        # Contract addresses
+│   │   ├── admin.ts         # Verification + token grant helpers
 │   │   ├── supabaseClient.ts
 │   │   └── abi/             # Smart contract ABIs
 │   ├── pages/
-│   │   └── Index.tsx        # Main landing page
+│   │   ├── Index.tsx        # Main landing page
+│   │   └── Admin.tsx        # Admin gate + hub
 │   └── types/               # TypeScript definitions
+├── supabase/
+│   └── admin-setup.sql      # Users + verification columns
 ├── public/                  # Static assets
 └── .env.example            # Environment template
 ```
@@ -219,12 +263,14 @@ clean-chain-core-operator/
 ## 🎮 Usage
 
 ### Connect Wallet
+
 1. Install MetaMask and add Base Sepolia network
 2. Get test ETH from [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-sepolia-faucet)
 3. Click "Enter as User/Tracker/Organization"
 4. Approve the connection in MetaMask
 
 ### Submit Waste (User)
+
 1. Enter waste weight in kg
 2. Select waste type
 3. Add GPS coordinates (or use "Get Current Location")
@@ -232,9 +278,25 @@ clean-chain-core-operator/
 5. Click "Submit Waste"
 
 ### Earn & Redeem Tokens
-- Earn 0.1 PPEN per kg of waste submitted
+
+- Earn 0.1 PPEN per kg of waste **after admin verification**
 - Visit Marketplace to redeem for products
 - Or exchange PPEN for ETH
+
+### Admin Hub
+
+1. Run `supabase/admin-setup.sql` in the Supabase SQL Editor
+2. Add your wallet to `.env`:
+   ```env
+   VITE_ADMIN_WALLETS=0xYourAdminWalletHere
+   ```
+3. Restart the app, then open [Admin Hub](/admin) (`/admin`)
+4. Review each submission:
+   - Grant tokens only if it is **not a duplicate** and is at a **prominent waste-disposal location**
+   - Otherwise reject with no tokens
+5. Manage users (create, edit, suspend, delete) and inspect connected wallets
+
+The admin wallet that approves a report must be the PPEN contract owner (to mint) or hold enough PPEN (to transfer).
 
 ---
 
