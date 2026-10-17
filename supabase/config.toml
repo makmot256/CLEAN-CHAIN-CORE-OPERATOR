@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.blink-approve-submission]
 verify_jwt = false
+
+[functions.groq-chat]
+verify_jwt = false

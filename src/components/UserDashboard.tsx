@@ -42,6 +42,7 @@ import { rewardForWeight } from "@/lib/admin";
 import { PaymentHandlerABI } from "@/lib/abi/PaymentHandler";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useTheme } from "@/contexts/ThemeContext";
+import WasteAssistantChat from "@/components/WasteAssistantChat";
 /////////
 interface UserDashboardProps {
   onBack: () => void;
@@ -663,36 +664,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 h-64 mb-4 overflow-y-auto">
-                  <div className="space-y-3">
-                    <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg max-w-xs">
-                      <p className="text-sm dark:text-gray-200">
-                        Hello! I'm your waste management assistant. How can I
-                        help you today?
-                      </p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-700 p-3 rounded-lg max-w-xs ml-auto">
-                      <p className="text-sm dark:text-gray-200">
-                        How do I properly sort plastic waste?
-                      </p>
-                    </div>
-                    <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg max-w-xs">
-                      <p className="text-sm dark:text-gray-200">
-                        Great question! Here are the main plastic categories to
-                        sort by...
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="Ask about waste management..."
-                    className="flex-1"
-                  />
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    Send
-                  </Button>
-                </div>
+                <WasteAssistantChat />
               </CardContent>
             </Card>
           </TabsContent>
