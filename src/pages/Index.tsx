@@ -300,18 +300,41 @@ const Index = () => {
     return <Marketplace onBack={goHome} />;
   }
 
+  // The Blink login form sits inline in the header on sm+ screens and on
+  // its own full-width row below the header on phones.
+  const loginFields = (
+    <>
+      <Input
+        value={usernameInput}
+        onChange={(e) => setUsernameInput(e.target.value)}
+        placeholder="username or you@blink.sv"
+        className="h-9 min-w-0 flex-1 sm:w-48 sm:flex-none"
+        autoCapitalize="none"
+        autoCorrect="off"
+      />
+      <Button
+        type="submit"
+        size="sm"
+        disabled={isLoggingIn}
+        className="btn-brand shrink-0 border-0 whitespace-nowrap"
+      >
+        {isLoggingIn ? "Checking…" : "Login with Blink"}
+      </Button>
+    </>
+  );
+
   // Home view: show role selection
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b border-green-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <a href="#home" className="flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-600 to-emerald-600 shadow-lg shadow-green-600/20">
+        <div className="container mx-auto flex items-center justify-between gap-2 px-4 py-3 sm:py-4">
+          <a href="#home" className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <div className="flex h-9 w-9 shrink-0 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-600 to-emerald-600 shadow-lg shadow-green-600/20">
               <Recycle className="h-6 w-6 text-white" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl">
+            <div className="min-w-0">
+              <h1 className="text-base font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl">
                 CleanChain{" "}
                 <span className="text-gradient-brand">Core Operator</span>
               </h1>
@@ -340,7 +363,7 @@ const Index = () => {
             </Link>
           </nav>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <Button
               variant="ghost"
               size="icon"
@@ -379,28 +402,21 @@ const Index = () => {
             ) : (
               <form
                 onSubmit={handleLoginWithBlink}
-                className="flex items-center gap-2"
+                className="hidden items-center gap-2 sm:flex"
               >
-                <Input
-                  value={usernameInput}
-                  onChange={(e) => setUsernameInput(e.target.value)}
-                  placeholder="username or you@blink.sv"
-                  className="h-9 w-32 sm:w-48"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                />
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={isLoggingIn}
-                  className="btn-brand border-0 whitespace-nowrap"
-                >
-                  {isLoggingIn ? "Checking…" : "Login with Blink"}
-                </Button>
+                {loginFields}
               </form>
             )}
           </div>
         </div>
+        {!account && (
+          <form
+            onSubmit={handleLoginWithBlink}
+            className="container mx-auto flex items-center gap-2 px-4 pb-3 sm:hidden"
+          >
+            {loginFields}
+          </form>
+        )}
       </header>
 
       {/* Hero Section */}
@@ -667,16 +683,24 @@ const Index = () => {
                 <h4 className="mb-2 text-xl font-bold text-gray-900">
                   Subscribe to receive updates
                 </h4>
-                <p className="mb-4 text-sm text-green-700">
-                  * indicates required
-                </p>
-                <div className="space-y-4">
+                <form
+                  className="mt-4 space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    toast({
+                      title: "Subscribed",
+                      description: "Thanks! You'll receive our updates.",
+                    });
+                    e.currentTarget.reset();
+                  }}
+                >
                   <div>
                     <label className="text-sm font-medium text-gray-700">
-                      Email Address <span className="text-green-600">*</span>
+                      Email Address
                     </label>
                     <Input
                       type="email"
+                      required
                       placeholder="your@email.com"
                       className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
                     />
@@ -687,6 +711,7 @@ const Index = () => {
                     </label>
                     <Input
                       type="text"
+                      required
                       placeholder="Enter first name"
                       className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
                     />
@@ -697,15 +722,16 @@ const Index = () => {
                     </label>
                     <Input
                       type="text"
+                      required
                       placeholder="Enter last name"
                       className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
                     />
                   </div>
-                  <Button className="btn-brand w-full border-0">
+                  <Button type="submit" className="btn-brand w-full border-0">
                     <Send className="mr-2 h-4 w-4" />
                     Subscribe
                   </Button>
-                </div>
+                </form>
               </div>
             </div>
           </div>

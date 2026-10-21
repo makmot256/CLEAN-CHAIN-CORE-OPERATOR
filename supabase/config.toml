@@ -15,3 +15,6 @@ verify_jwt = false
 
 [functions.groq-transcribe]
 verify_jwt = false
+
+[functions.blink-education-invoice]
+verify_jwt = false

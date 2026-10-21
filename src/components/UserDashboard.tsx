@@ -7,7 +7,7 @@ interface WasteSubmission {
   created_at: string;
   status: string;
 }
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,15 +34,19 @@ import {
   Sun,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ethers } from "ethers";
 import { useBlinkAuth } from "@/hooks/useBlinkAuth";
 import { supabase } from "@/lib/supabaseClient";
-import { CONTRACTS, TOKEN_CONFIG, BLINK_CONFIG } from "@/lib/config";
+import { BLINK_CONFIG } from "@/lib/config";
 import { rewardForWeight } from "@/lib/admin";
-import { PaymentHandlerABI } from "@/lib/abi/PaymentHandler";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useTheme } from "@/contexts/ThemeContext";
 import WasteAssistantChat from "@/components/WasteAssistantChat";
+import LightningPaymentDialog from "@/components/LightningPaymentDialog";
+import {
+  EDUCATION_COURSES,
+  listEducationPurchases,
+  type EducationCourse,
+} from "@/lib/education";
 /////////
 interface UserDashboardProps {
   onBack: () => void;
@@ -261,37 +265,35 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
       });
     }
   };
-  const handlePurchaseEducation = async () => {
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
+  const [payingCourse, setPayingCourse] = useState<EducationCourse | null>(
+    null,
+  );
+  const [unlockedCourses, setUnlockedCourses] = useState<
+    Record<string, string>
+  >({});
 
-      const contract = new ethers.Contract(
-        CONTRACTS.PAYMENT_HANDLER,
-        PaymentHandlerABI,
-        signer,
+  useEffect(() => {
+    if (!account) return;
+    listEducationPurchases(account)
+      .then(setUnlockedCourses)
+      .catch((err) =>
+        console.error("Error loading education purchases:", err.message),
       );
+  }, [account]);
 
-      const tx = await contract.receiveUserPayment({
-        value: ethers.parseEther("0.00025"), // Adjust this as needed for your price
-      });
-
-      await tx.wait();
-
+  const handleCoursePaid = useCallback(
+    (courseId: string, url: string) => {
+      setUnlockedCourses((prev) => ({ ...prev, [courseId]: url }));
+      setPayingCourse(null);
       toast({
-        title: "✅ Access Granted",
-        description:
-          "Waste Monetary skill video is on this link: https://drive.google.com/sample-education-video",
+        title: "✅ Payment received",
+        description: "Your video is unlocked. Enjoy!",
       });
-    } catch (err) {
-      console.error(err);
-      toast({
-        title: "❌ Payment Error",
-        description: "Something went wrong during payment.",
-        variant: "destructive",
-      });
-    }
-  };
+      window.open(url, "_blank", "noopener,noreferrer");
+    },
+    [toast],
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
@@ -426,7 +428,7 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                       <Label htmlFor="gps" className="dark:text-gray-300">
                         GPS Coordinates
                       </Label>
-                      <div className="flex space-x-2">
+                      <div className="flex flex-col gap-2 sm:flex-row">
                         <Input
                           id="gps"
                           placeholder="Latitude, Longitude"
@@ -601,30 +603,9 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {[
-                    {
-                      title: " Upcycling Plastic into Marketable Products",
-                      cost: "0.5$",
-                      duration: "10 min",
-                    },
-                    {
-                      title: " Tracking & Trading Waste Tokens",
-                      cost: "0.5$",
-                      duration: "8 min",
-                    },
-                    {
-                      title: "How To Sell to the President Waste",
-                      cost: "0.5$",
-                      duration: "15 min",
-                    },
-                    {
-                      title: "How to Earn with Community Clean-Up Drives",
-                      cost: "0.5$",
-                      duration: "20 min",
-                    },
-                  ].map((course, index) => (
+                  {EDUCATION_COURSES.map((course) => (
                     <Card
-                      key={index}
+                      key={course.id}
                       className="hover:shadow-md transition-shadow dark:bg-gray-800/50 dark:border-gray-700"
                     >
                       <CardContent className="p-4">
@@ -635,18 +616,37 @@ const UserDashboard = ({ onBack, onMarketplace }: UserDashboardProps) => {
                           <div className="text-sm text-gray-600 dark:text-gray-400">
                             <span>{course.duration}</span>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handlePurchaseEducation}
-                          >
-                            Pay {course.cost}
-                          </Button>
+                          {unlockedCourses[course.id] ? (
+                            <Button size="sm" asChild>
+                              <a
+                                href={unlockedCourses[course.id]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Play className="w-4 h-4 mr-1" />
+                                Watch
+                              </a>
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setPayingCourse(course)}
+                            >
+                              Pay {course.priceSats} sats
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
+                <LightningPaymentDialog
+                  course={payingCourse}
+                  username={account}
+                  onClose={() => setPayingCourse(null)}
+                  onPaid={handleCoursePaid}
+                />
               </CardContent>
             </Card>
           </TabsContent>

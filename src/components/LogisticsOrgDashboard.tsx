@@ -32,6 +32,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from "recharts";
 import {
   Package,
@@ -481,16 +482,17 @@ const LogisticsOrgDashboard = ({
                       <Pie
                         data={wasteTypeData}
                         cx="50%"
-                        cy="50%"
-                        outerRadius={80}
+                        cy="45%"
+                        outerRadius="70%"
                         dataKey="value"
-                        label={(entry) => `${entry.name}: ${entry.value}%`}
+                        label={(entry) => `${entry.value}%`}
                       >
                         {wasteTypeData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>

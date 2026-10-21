@@ -431,10 +431,10 @@ const WasteTrackerDashboard = ({
                     key={job.id}
                     className="border-yellow-200 hover:shadow-lg transition-shadow"
                   >
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <h4 className="font-semibold text-lg">
                               {job.waste_type}
                             </h4>
@@ -445,17 +445,21 @@ const WasteTrackerDashboard = ({
                               <Clock className="w-3 h-3 mr-1" /> Pending
                             </Badge>
                           </div>
-                          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                            <div className="flex items-center">
-                              <Users className="w-4 h-4 mr-2" />
-                              Submitted by: {job.submitted_by}
+                          <div className="grid grid-cols-1 gap-2 text-sm text-gray-600 sm:grid-cols-2 sm:gap-4">
+                            <div className="flex min-w-0 items-start">
+                              <Users className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
+                              <span className="min-w-0 break-all">
+                                Submitted by: {job.submitted_by}
+                              </span>
                             </div>
-                            <div className="flex items-center">
-                              <MapPin className="w-4 h-4 mr-2" />
-                              Location:{" "}
-                              {job.latitude && job.longitude
-                                ? `${job.latitude}, ${job.longitude}`
-                                : "Unknown"}
+                            <div className="flex min-w-0 items-start">
+                              <MapPin className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
+                              <span className="min-w-0 break-all">
+                                Location:{" "}
+                                {job.latitude && job.longitude
+                                  ? `${job.latitude}, ${job.longitude}`
+                                  : "Unknown"}
+                              </span>
                             </div>
                             <div>Weight: {job.weight}kg</div>
                             <div className="flex items-center">
@@ -471,14 +475,17 @@ const WasteTrackerDashboard = ({
                             </div>
                           </div>
                         </div>
-                        <div className="space-y-2">
-                          <Button onClick={() => handleAcceptJob(job)}>
+                        <div className="flex gap-2 sm:flex-col sm:shrink-0">
+                          <Button
+                            className="flex-1 sm:flex-none"
+                            onClick={() => handleAcceptJob(job)}
+                          >
                             Accept Job
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full"
+                            className="flex-1 h-10 sm:flex-none sm:h-9 sm:w-full"
                           >
                             View Route
                           </Button>

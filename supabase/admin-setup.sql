@@ -56,3 +56,21 @@ DROP POLICY IF EXISTS "Enable all access" ON user_wallet;
 
 CREATE POLICY "Enable all access" ON app_users FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Enable all access" ON user_wallet FOR ALL USING (true) WITH CHECK (true);
+
+-- Paid educational videos: one row per Lightning invoice issued by the
+-- blink-education-invoice Edge Function. RLS is on with no policies, so only
+-- the service role (that function) can read or write it — the browser can't
+-- mark its own purchases as paid.
+CREATE TABLE IF NOT EXISTS education_purchases (
+  payment_hash text PRIMARY KEY,
+  payment_request text NOT NULL,
+  account text NOT NULL,
+  course_id text NOT NULL,
+  amount_sats integer NOT NULL,
+  status text NOT NULL DEFAULT 'PENDING',
+  created_at timestamptz DEFAULT now(),
+  paid_at timestamptz
+);
+CREATE INDEX IF NOT EXISTS education_purchases_account_idx
+  ON education_purchases (account, status);
+ALTER TABLE education_purchases ENABLE ROW LEVEL SECURITY;
