@@ -687,7 +687,7 @@ const Index = () => {
                     </label>
                     <Input
                       type="text"
-                      placeholder="John"
+                      placeholder="Enter first name"
                       className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
                     />
                   </div>
@@ -697,7 +697,7 @@ const Index = () => {
                     </label>
                     <Input
                       type="text"
-                      placeholder="Doe"
+                      placeholder="Enter last name"
                       className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
                     />
                   </div>
